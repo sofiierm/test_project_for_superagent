@@ -179,14 +179,14 @@ export function videosTable(videos, { showAccount = true, emptyText = 'Пока 
   }
   return html`
     <div class="table-wrap">
-      <table class="data">
+      <table class="data" aria-label="Ролики с метриками">
         <thead>
           <tr>
-            <th>${showAccount ? 'Ролик' : 'Название'}</th>
-            <th class="num">Просмотры</th>
-            <th class="num">Лайки</th>
-            <th class="num">Комментарии</th>
-            <th class="num">ER</th>
+            <th scope="col">${showAccount ? 'Ролик' : 'Название'}</th>
+            <th scope="col" class="num">Просмотры</th>
+            <th scope="col" class="num">Лайки</th>
+            <th scope="col" class="num">Комментарии</th>
+            <th scope="col" class="num">ER</th>
           </tr>
         </thead>
         <tbody>${videos.map((v) => videoRow(v, { showAccount }))}</tbody>
@@ -243,9 +243,14 @@ export function hookTable(hooks) {
   if (!rows.length) return html`<p class="card__hint">Приёмы подачи не распознаны.</p>`;
   return html`
     <div class="table-wrap">
-      <table class="data">
+      <table class="data" aria-label="Приёмы подачи и вовлечённость">
         <thead>
-          <tr><th>Приём</th><th class="num">Роликов</th><th class="num">Средний ER</th><th class="num">Без приёма</th></tr>
+          <tr>
+            <th scope="col">Приём</th>
+            <th scope="col" class="num">Роликов</th>
+            <th scope="col" class="num">Средний ER</th>
+            <th scope="col" class="num">Без приёма</th>
+          </tr>
         </thead>
         <tbody>
           ${rows.map((h) => html`

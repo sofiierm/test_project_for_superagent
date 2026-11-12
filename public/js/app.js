@@ -39,6 +39,8 @@ const input = $('#account-input');
 const errorBox = $('#add-account-error');
 const submitBtn = $('#add-account-submit');
 
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 function openDialog() {
   if (!dialog) return;
   errorBox.hidden = true;
@@ -46,6 +48,29 @@ function openDialog() {
   dialog.showModal();
   requestAnimationFrame(() => input?.focus());
 }
+
+// Нативный <dialog> закрывает клавиатуру внутри себя не во всех браузерах:
+// Tab уходил в адресную строку, и фокус терялся. Держим цикл сами.
+dialog?.addEventListener('keydown', (event) => {
+  if (event.key !== 'Tab') return;
+  const items = [...dialog.querySelectorAll(FOCUSABLE)]
+    .filter((el) => el.offsetParent !== null || el === document.activeElement);
+  if (!items.length) return;
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+  // Если фокус уже потерян (ушёл в chrome браузера) — возвращаем в диалог.
+  if (!dialog.contains(document.activeElement)) {
+    event.preventDefault();
+    first.focus();
+  }
+});
 
 $$('[data-open-add-account]').forEach((btn) => btn.addEventListener('click', openDialog));
 

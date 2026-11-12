@@ -4,8 +4,54 @@
 // Зачем: скриншоты смотрит человек, а эти проверки ловят регрессии
 // автоматически — включая те, что не видны на одном удачном кадре.
 import { chromium } from 'playwright';
+import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
-const BASE = process.env.BASE_URL || 'http://127.0.0.1:4180';
+// Если BASE_URL задан, проверяем уже запущенный сервер (удобно при разработке).
+// Иначе поднимаем свой на чистой базе, чтобы команда работала «из коробки».
+const EXTERNAL = Boolean(process.env.BASE_URL);
+const PORT = Number(process.env.LAYOUT_PORT || 4323);
+const BASE = process.env.BASE_URL || `http://127.0.0.1:${PORT}`;
+const dataDir = EXTERNAL ? null : fs.mkdtempSync(path.join(os.tmpdir(), 'ca-layout-'));
+
+let server = null;
+
+async function waitForServer(url, timeoutMs = 30_000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) return;
+    } catch { /* поднимается */ }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error(`сервер не ответил за ${timeoutMs} мс: ${url}`);
+}
+
+if (!EXTERNAL) {
+  server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'scripts/serve.mjs'], {
+    env: {
+      ...process.env,
+      PORT: String(PORT),
+      DATA_DIR: dataDir,
+      DB_PATH: path.join(dataDir, 'layout.db'),
+      PROVIDER: 'demo',
+      SEED_DEMO: 'true',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  server.stdout.resume();
+  server.stderr.resume();
+  await waitForServer(`${BASE}/api/health`);
+}
+
+function cleanup() {
+  if (server) server.kill('SIGTERM');
+  if (dataDir) fs.rmSync(dataDir, { recursive: true, force: true });
+}
+process.on('exit', cleanup);
 const VIEWPORTS = [
   { name: 'mobile', width: 390, height: 844 },
   { name: 'tablet', width: 834, height: 1112 },
@@ -100,6 +146,16 @@ for (const viewport of VIEWPORTS) {
     check(metrics.imagesWithoutAlt === 0, `${label}: img без alt`);
     check(metrics.charts === metrics.chartsWithLabel, `${label}: графики без aria-label`);
 
+    // Таблицы: заголовки должны быть связаны с ячейками, у таблицы — имя.
+    const tables = await page.evaluate(() => [...document.querySelectorAll('table.data')].map((t) => ({
+      label: t.getAttribute('aria-label') || t.querySelector('caption')?.textContent?.trim() || '',
+      allScope: [...t.querySelectorAll('th')].every((th) => th.hasAttribute('scope')),
+    })));
+    for (const table of tables) {
+      check(table.allScope, `${label}: у таблицы есть th без scope`);
+      check(table.label.length > 0, `${label}: у таблицы нет доступного имени`);
+    }
+
     if (viewport.name === 'mobile' && path === '/') {
       notes.push(`${label}: графиков ${metrics.charts}`);
     }
@@ -154,7 +210,8 @@ for (const viewport of VIEWPORTS) {
   }
 }
 
-// Клавиатурная доступность: модалка открывается, фокус уходит внутрь, Esc закрывает.
+// Клавиатурная доступность: модалка открывается, фокус уходит внутрь,
+// Tab не выходит за её пределы, Esc закрывает и возвращает фокус на кнопку.
 {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
@@ -164,13 +221,25 @@ for (const viewport of VIEWPORTS) {
   check(open, 'модалка не открылась по кнопке');
   const focusInside = await page.evaluate(() => document.activeElement?.id === 'account-input');
   check(focusInside, 'фокус не перешёл в поле ввода модалки');
+
+  const escapes = [];
+  for (let i = 0; i < 16; i += 1) {
+    await page.keyboard.press('Tab');
+    const inside = await page.evaluate(() => document.querySelector('#add-account-dialog').contains(document.activeElement));
+    if (!inside) escapes.push(i);
+  }
+  check(escapes.length === 0, `фокус выходит из модалки по Tab на шагах ${escapes.join(', ')}`);
+
   await page.keyboard.press('Escape');
   const closed = await page.evaluate(() => document.querySelector('#add-account-dialog')?.open === false);
   check(closed, 'модалка не закрывается по Escape');
+  const restored = await page.evaluate(() => document.activeElement?.hasAttribute('data-open-add-account'));
+  check(restored, 'после закрытия фокус не вернулся на кнопку открытия');
   await context.close();
 }
 
 await browser.close();
+cleanup();
 
 if (failures.length) {
   process.stderr.write(`Проверки вёрстки: ${failures.length} проблем\n`);
