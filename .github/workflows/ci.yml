@@ -43,8 +43,10 @@ jobs:
           node tests/layout.mjs
           node scripts/check-contrast.mjs
           node tests/e2e.mjs
-      - name: Скриншоты для ревью
+      - name: Скриншоты для ревью (быстрый набор)
         if: always()
+        env:
+          SHOTS_QUICK: '1'
         run: |
           node scripts/serve.mjs &
           SERVER=$!

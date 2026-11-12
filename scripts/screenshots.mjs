@@ -10,13 +10,21 @@ const OUT = path.join(ROOT, 'test-results/screens');
 const BASE = process.env.BASE_URL || 'http://127.0.0.1:4173';
 fs.mkdirSync(OUT, { recursive: true });
 
-const VIEWPORTS = [
+// Быстрый режим для CI: два разрешения вместо пяти и без полностраничных
+// снимков — полный набор снимается локально перед выкладкой.
+const QUICK = process.env.SHOTS_QUICK === '1';
+
+const ALL_VIEWPORTS = [
   { name: 'mobile-320', width: 320, height: 640, deviceScaleFactor: 1, isMobile: true, hasTouch: true },
   { name: 'mobile-390', width: 390, height: 844, deviceScaleFactor: 1, isMobile: true, hasTouch: true },
   { name: 'tablet-768', width: 768, height: 1024, deviceScaleFactor: 1, hasTouch: true },
   { name: 'desktop-1366', width: 1366, height: 768, deviceScaleFactor: 1 },
   { name: 'desktop-1920', width: 1920, height: 1080, deviceScaleFactor: 1 },
 ];
+
+const VIEWPORTS = QUICK
+  ? ALL_VIEWPORTS.filter((viewport) => viewport.name === 'mobile-390' || viewport.name === 'desktop-1366')
+  : ALL_VIEWPORTS;
 
 const browser = await chromium.launch();
 const consoleErrors = [];
@@ -91,11 +99,11 @@ for (const viewport of VIEWPORTS) {
     if (themeState !== theme) failures.push(`[${viewport.name}] тема ${themeState} вместо ${theme}`);
 
     await page.screenshot({ path: path.join(OUT, `${viewport.name}-${theme}-01-hero.png`) });
-    if (viewport.name === 'desktop-1366' || viewport.name === 'mobile-390') {
+    if (!QUICK && (viewport.name === 'desktop-1366' || viewport.name === 'mobile-390')) {
       await page.screenshot({ path: path.join(OUT, `${viewport.name}-${theme}-full.png`), fullPage: true });
     }
 
-    if (viewport.name === 'desktop-1366') {
+    if (!QUICK && viewport.name === 'desktop-1366') {
       for (const id of ['about', 'benefits', 'directions', 'process', 'portfolio', 'materials', 'reviews', 'faq', 'contact', 'contacts']) {
         const section = page.locator(`#${id}`);
         if (await section.count()) {
@@ -111,7 +119,7 @@ for (const viewport of VIEWPORTS) {
 }
 
 /* --------------------------- интерактивные состояния (desktop + mobile) */
-for (const viewport of [VIEWPORTS[1], VIEWPORTS[3]]) {
+for (const viewport of QUICK ? VIEWPORTS : [VIEWPORTS[1], VIEWPORTS[3]]) {
   for (const theme of ['light', 'dark']) {
     const { context, page } = await newPage(viewport, theme);
     console.log('viewport', viewport.name, theme);
