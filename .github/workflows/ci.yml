@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Тесты разметки, валидации и API
+        run: node tests/run.mjs
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Установить браузер для Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Вёрстка, контраст и сценарии
+        run: |
+          node scripts/serve.mjs &
+          SERVER=$!
+          trap 'kill $SERVER' EXIT
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:4173/ > /dev/null && break
+            sleep 1
+          done
+          node tests/layout.mjs
+          node scripts/check-contrast.mjs
+          node tests/e2e.mjs
+      - name: Скриншоты для ревью
+        if: always()
+        run: |
+          node scripts/serve.mjs &
+          SERVER=$!
+          trap 'kill $SERVER' EXIT
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:4173/ > /dev/null && break
+            sleep 1
+          done
+          node scripts/screenshots.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: test-results/
+          retention-days: 7

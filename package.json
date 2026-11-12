@@ -1,0 +1,26 @@
+{
+  "name": "les-i-liniya-landing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Одностраничный сайт мебельной мастерской: статическая сборка, тёмная и светлая темы",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "images": "node scripts/build-images.mjs",
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/serve.mjs",
+    "test": "node tests/run.mjs",
+    "test:e2e": "node tests/e2e.mjs",
+    "serve": "node scripts/serve.mjs",
+    "test:layout": "node tests/layout.mjs",
+    "test:contrast": "node scripts/check-contrast.mjs",
+    "test:all": "node tests/run.mjs && node tests/layout.mjs && node tests/e2e.mjs && node scripts/check-contrast.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "playwright": "^1.65.0",
+    "sharp": "^0.34.0"
+  }
+}
