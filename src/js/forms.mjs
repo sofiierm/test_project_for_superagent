@@ -82,7 +82,7 @@ function applyErrors(form, errors) {
   if (first) first.focus({ preventScroll: false });
 }
 
-export function initLeadForm(form, { onSuccess } = {}) {
+export function initLeadForm(form, { onSuccess, onError } = {}) {
   if (!form) return;
 
   const phone = form.querySelector('[data-phone]');
@@ -172,6 +172,7 @@ export function initLeadForm(form, { onSuccess } = {}) {
           : 'Не удалось отправить заявку. Позвоните нам или напишите в мессенджер.',
       );
       document.dispatchEvent(new CustomEvent('lead:error', { detail: { message: String(error?.message || error) } }));
+      onError?.(error);
     } finally {
       setBusy(form, false);
     }

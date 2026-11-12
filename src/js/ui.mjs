@@ -202,7 +202,15 @@ function initLeadModal(initForm) {
   });
 
   const form = modal.querySelector('[data-lead-form]');
-  if (form) initForm(form, { onSuccess: () => setTimeout(() => instance.close(), 4000) });
+  if (form) {
+    initForm(form, {
+      onSuccess: () => {
+        track('form_submit', { place: 'modal' });
+        setTimeout(() => instance.close(), 4000);
+      },
+      onError: () => track('form_error', { place: 'modal' }),
+    });
+  }
 
   return instance;
 }
@@ -315,12 +323,13 @@ export function initUI({ initForm, portfolio, analytics, saveConsent, readConsen
   initCookies({ analytics, saveConsent, readConsent });
   initReveal();
 
-  // Встроенная форма в финальном блоке.
+  // Встроенная форма в финальном блоке. Место отправки знает только тот, кто
+  // создал форму, поэтому событие шлём здесь, а не общим слушателем документа:
+  // иначе отправка из модалки и из секции считалась бы дважды.
   document.querySelectorAll('main [data-lead-form]').forEach((form) => {
     initForm(form, {
       onSuccess: () => track('form_submit', { place: 'section' }),
+      onError: () => track('form_error', { place: 'section' }),
     });
   });
-  document.addEventListener('lead:success', () => track('form_submit', { place: 'modal' }));
-  document.addEventListener('lead:error', () => track('form_error'));
 }

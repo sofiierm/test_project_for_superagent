@@ -42,6 +42,9 @@ function push(event, params) {
     utm: utmParams(),
     ...params,
   };
+  // Если посетитель отказался от аналитических cookie, события не копим:
+  // иначе очередь росла бы до перезагрузки страницы без всякой пользы.
+  if (!ready && readConsent() === 'necessary') return;
   queue.push(payload);
   if (ready) flush();
 }
