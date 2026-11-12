@@ -146,7 +146,24 @@ for (const theme of ['light', 'dark']) {
     localStorage.setItem('theme', value);
     document.documentElement.dataset.theme = value;
   }, theme);
-  await page.waitForTimeout(150);
+  // Собираем цвета в состоянии покоя: во время перехода темы и reveal-анимации
+  // браузер отдаёт промежуточные оттенки, и проверка ловит ложные провалы.
+  await page.evaluate(async () => {
+    const step = window.innerHeight * 0.8;
+    for (let y = 0; y < document.body.scrollHeight; y += step) {
+      window.scrollTo(0, y);
+      await new Promise((resolve) => setTimeout(resolve, 40));
+    }
+    window.scrollTo(0, 0);
+  });
+  await page.addStyleTag({
+    content: `*, *::before, *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+    .reveal { opacity: 1 !important; transform: none !important; }`,
+  });
+  await page.waitForTimeout(250);
   const samples = await page.evaluate(() => {
     const nodes = [...document.querySelectorAll('body p, body h2, body h3, body a, body li, body label, body .btn')];
     const out = [];
