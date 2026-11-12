@@ -149,8 +149,6 @@ const jsResult = await build({
 });
 fs.mkdirSync(path.join(DIST, 'assets/js'), { recursive: true });
 fs.writeFileSync(path.join(DIST, 'assets/js/main.js'), jsResult.outputFiles[0].text);
-// Тот же скрипт в виде ES-модуля — для тестов и будущих интеграций.
-fs.writeFileSync(path.join(DIST, 'assets/js/main.mjs'), jsResult.outputFiles[0].text);
 
 /* --------------------------------------------------------------- ассеты */
 const copyDir = (from, to) => {

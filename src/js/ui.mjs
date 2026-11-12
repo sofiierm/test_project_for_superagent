@@ -208,7 +208,7 @@ function initLeadModal(initForm) {
 }
 
 /* ----------------------------------------------------------------- lightbox */
-function initLightbox(initFormUnused, portfolio) {
+function initLightbox(portfolio) {
   const root = document.querySelector('[data-lightbox-root]');
   if (!root || !portfolio?.length) return;
   const media = root.querySelector('[data-lightbox-media]');
@@ -311,7 +311,7 @@ export function initUI({ initForm, portfolio, analytics, saveConsent, readConsen
   initToTop();
   initAccordion();
   initLeadModal(initForm);
-  initLightbox(initForm, portfolio);
+  initLightbox(portfolio);
   initCookies({ analytics, saveConsent, readConsent });
   initReveal();
 
