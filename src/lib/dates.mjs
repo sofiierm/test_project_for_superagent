@@ -133,6 +133,20 @@ export function formatRelative(value) {
   return formatDate(d);
 }
 
+// «через 2 ч», «через 15 мин», «сейчас» — для расписания синхронизации.
+export function formatIn(value, now = Date.now()) {
+  const d = parseDate(value);
+  if (!d) return '—';
+  const diff = d.getTime() - Number(now);
+  if (diff <= 60_000) return 'сейчас';
+  const minutes = Math.round(diff / 60000);
+  if (minutes < 60) return `через ${minutes} мин`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `через ${hours} ч`;
+  const days = Math.round(hours / 24);
+  return `через ${days} ${plural(days, 'день', 'дня', 'дней')}`;
+}
+
 export function formatNumber(value, { compact = false } = {}) {
   const n = Number(value);
   if (!Number.isFinite(n)) return '—';

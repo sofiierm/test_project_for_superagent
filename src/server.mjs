@@ -13,6 +13,8 @@ import { deleteAccount, getAccount, listAccounts } from './db/accounts.mjs';
 import { listVideos } from './db/videos.mjs';
 import { listRuns } from './db/runs.mjs';
 import { addAccount, resolveProvider, syncAccount } from './providers/index.mjs';
+import { isSyncInFlight } from './lib/sync-lock.mjs';
+import { startScheduler } from './services/scheduler.mjs';
 import { needsSeed, seedDemoData } from './services/seed.mjs';
 import {
   accountData, dashboardData, overviewStats, prepareVideos, videoData, videosToCsv,
@@ -169,6 +171,15 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
       if (accountSync && req.method === 'POST') {
         const id = Number(accountSync[1]);
         if (!getAccount(id)) return sendJson(res, 404, { error: 'Аккаунт не найден.' });
+        // Второй параллельный запуск не начинаем: отвечаем 409 и говорим,
+        // что синхронизация уже идёт. 202 здесь соврал бы о результате.
+        if (isSyncInFlight(id)) {
+          return sendJson(res, 409, {
+            error: 'Синхронизация этого аккаунта уже идёт.',
+            status: 'busy',
+            retryAfter: 5,
+          });
+        }
         try {
           const result = await syncAccount(id);
           return sendJson(res, 200, {
@@ -178,6 +189,7 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
             videosNew: result.videosNew,
             warning: result.warning ?? '',
             error: result.error ?? '',
+            nextSyncAt: result.account?.nextSyncAt ?? null,
           });
         } catch (error) {
           return sendJson(res, 422, { error: error.message, hint: error.hint ?? '' });
@@ -317,5 +329,9 @@ export async function start() {
     server.once('error', reject);
     server.listen(config.port, config.host, resolve);
   });
-  return { server, provider };
+  // Фоновую синхронизацию выключаем вместе с сервером: иначе таймер держит
+  // процесс живым, и `npm start` не завершается по SIGTERM.
+  const stopScheduler = config.syncScheduler ? startScheduler() : () => {};
+  server.once('close', stopScheduler);
+  return { server, provider, stopScheduler };
 }

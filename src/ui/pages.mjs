@@ -3,10 +3,11 @@ import { html } from './html.mjs';
 import { layout } from './layout.mjs';
 import {
   columnsChart, deltaBadge, emptyState, hookTable, insightList, lineChart, notice,
-  platformBadge, sentimentBar, statCard, topicsList, videosTable, PLATFORM_LABELS,
+  platformBadge, sentimentBar, statCard, syncScheduleLabel, topicsList, videosTable,
+  PLATFORM_LABELS,
 } from './components.mjs';
 import {
-  formatDateTime, formatNumber, formatPercent, formatShortDate, plural, weekdayIndex,
+  formatDateTime, formatIn, formatNumber, formatPercent, formatShortDate, plural, weekdayIndex,
 } from '../lib/dates.mjs';
 
 const WEEKDAY_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
@@ -236,7 +237,7 @@ export function accountsPage(accounts, { mode, providerReason }) {
                 </div>
                 <div class="row" style="justify-content:space-between">
                   <span class="badge ${a.source === 'demo' ? 'badge--demo' : 'badge--live'}">${a.source === 'demo' ? 'демо' : 'live'}</span>
-                  <span class="cell-title__sub">${a.lastSyncedAt ? `обновлено ${formatShortDate(a.lastSyncedAt)}` : 'не синхронизирован'}</span>
+                  <span class="cell-title__sub">${a.lastSyncedAt ? `обновлено ${formatShortDate(a.lastSyncedAt)}` : 'не синхронизирован'}${a.nextSyncAt ? ` · далее ${formatIn(a.nextSyncAt)}` : ''}</span>
                 </div>
                 <div class="row">
                   <a class="btn btn--small" href="/accounts/${a.id}">Открыть</a>
@@ -291,6 +292,9 @@ export function accountPage(data, { mode, providerReason }) {
             @${account.handle} · ${formatNumber(account.followers)} подписчиков · ${videos.length} ${plural(videos.length, 'ролик', 'ролика', 'роликов')}
             · последняя синхронизация ${formatDateTime(account.lastSyncedAt)}
           </p>
+          <p class="card__hint">${syncScheduleLabel(account)}${account.syncIntervalMinutes
+            ? ` · интервал ${account.syncIntervalMinutes} мин`
+            : ''}</p>
         </div>
         <div class="page-head__actions">
           <a class="btn" href="/api/accounts/${account.id}/videos.csv">CSV</a>

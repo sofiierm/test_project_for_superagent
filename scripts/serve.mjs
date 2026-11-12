@@ -2,7 +2,7 @@
 // Запуск сервиса: node scripts/serve.mjs
 import { start } from '../src/server.mjs';
 
-const { server, provider } = await start();
+const { server, provider, stopScheduler } = await start();
 const { config } = await import('../src/config.mjs');
 const address = server.address();
 const host = address.address === '::' || address.address === '0.0.0.0' ? '127.0.0.1' : address.address;
@@ -11,6 +11,7 @@ process.stdout.write(`Источник данных: ${provider.name} (${provide
 
 const shutdown = (signal) => {
   process.stdout.write(`\n${signal}: останавливаю сервер\n`);
+  stopScheduler?.();
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 3000).unref();
 };

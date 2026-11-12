@@ -18,7 +18,7 @@ const { createServer } = await import('../../src/server.mjs');
 const { getDb } = await import('../../src/db/index.mjs');
 const { closeDb } = await import('../../src/db/index.mjs');
 const { seedDemoData } = await import('../../src/services/seed.mjs');
-const { listAccounts } = await import('../../src/db/accounts.mjs');
+const { listAccounts, getAccount } = await import('../../src/db/accounts.mjs');
 const { listVideos } = await import('../../src/db/videos.mjs');
 
 getDb();
@@ -147,6 +147,31 @@ test('синхронизация идемпотентна: повторный з
   const payload = await response.json();
   assert.equal(payload.videosNew, 0, 'повторная синхронизация создала дубли');
   assert.equal(listVideos({ accountId: account.id }).length, before);
+});
+
+test('одновременная синхронизация того же аккаунта получает 409, а не второй запуск', async () => {
+  const account = listAccounts()[0];
+  const lock = await import('../../src/lib/sync-lock.mjs');
+  lock.markInFlight(account.id);
+  try {
+    const response = await request(`/api/accounts/${account.id}/sync`, { method: 'POST' });
+    assert.equal(response.status, 409);
+    const payload = await response.json();
+    assert.equal(payload.status, 'busy');
+    assert.match(payload.error, /уже идёт/);
+  } finally {
+    lock.clearInFlight(account.id);
+  }
+});
+
+test('синхронизация возвращает расписание следующего запуска', async () => {
+  const account = listAccounts()[0];
+  const response = await request(`/api/accounts/${account.id}/sync`, { method: 'POST' });
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.ok(payload.nextSyncAt, 'нет nextSyncAt в ответе');
+  assert.ok(new Date(payload.nextSyncAt) > new Date(), 'следующий запуск не в будущем');
+  assert.equal(getAccount(account.id).nextSyncAt, payload.nextSyncAt);
 });
 
 test('синхронизация несуществующего аккаунта даёт 404', async () => {
