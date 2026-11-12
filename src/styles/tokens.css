@@ -66,7 +66,14 @@
 
   /* Затемнение рассчитано так, чтобы текст оставался читаемым (AA, 4.5:1)
      даже на самой светлой фотографии: под текстовым блоком альфа ≥ 0.72. */
-  --hero-scrim: linear-gradient(100deg, rgb(16 11 8 / 92%) 0%, rgb(16 11 8 / 88%) 34%, rgb(16 11 8 / 78%) 58%, rgb(16 11 8 / 34%) 82%, rgb(16 11 8 / 12%) 100%);
+  --hero-scrim: linear-gradient(
+    100deg,
+    rgb(16 11 8 / 92%) 0%,
+    rgb(16 11 8 / 88%) 34%,
+    rgb(16 11 8 / 78%) 58%,
+    rgb(16 11 8 / 34%) 82%,
+    rgb(16 11 8 / 12%) 100%
+  );
   --hero-text: #fdfaf5;
   --hero-text-muted: #e8dfd4;
 
@@ -102,7 +109,14 @@
   --line-strong: #4a4038;
   --focus: #7cb0ff;
 
-  --hero-scrim: linear-gradient(100deg, rgb(6 4 3 / 94%) 0%, rgb(6 4 3 / 90%) 34%, rgb(6 4 3 / 80%) 58%, rgb(6 4 3 / 40%) 82%, rgb(6 4 3 / 18%) 100%);
+  --hero-scrim: linear-gradient(
+    100deg,
+    rgb(6 4 3 / 94%) 0%,
+    rgb(6 4 3 / 90%) 34%,
+    rgb(6 4 3 / 80%) 58%,
+    rgb(6 4 3 / 40%) 82%,
+    rgb(6 4 3 / 18%) 100%
+  );
   --hero-text: #f7f1e8;
   --hero-text-muted: #d9cec0;
 
