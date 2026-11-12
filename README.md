@@ -22,8 +22,10 @@ npm run test:all      # всё подряд; нужен запущенный npm
 
 ```bash
 PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright npx playwright install chromium
-PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright node scripts/screenshots.mjs
+node scripts/screenshots.mjs
 ```
+
+Если Playwright не находит браузер, укажите путь явно: `PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright`.
 
 Скриншоты складываются в `test-results/screens/`: пять контрольных разрешений × две темы, плюс состояния меню, модального окна, ошибок валидации, успешной отправки, лайтбокса и FAQ. В `report.json` — ошибки консоли и сетевые сбои.
 
