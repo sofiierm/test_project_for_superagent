@@ -1,0 +1,821 @@
+[
+  {
+    "id": "hero-interior",
+    "alt": "Светлая гостиная с кухней: деревянные фасады, мягкий диван и большие окна",
+    "aspect": 1.7778,
+    "sizes": "(max-width: 900px) 100vw, 100vw",
+    "widths": [
+      960,
+      1440,
+      1920
+    ],
+    "hero": true,
+    "portfolio": false,
+    "files": {
+      "960": {
+        "avif": "hero-interior-960.avif",
+        "webp": "hero-interior-960.webp",
+        "jpg": "hero-interior-960.jpg",
+        "height": 540
+      },
+      "1440": {
+        "avif": "hero-interior-1440.avif",
+        "webp": "hero-interior-1440.webp",
+        "jpg": "hero-interior-1440.jpg",
+        "height": 810
+      },
+      "1920": {
+        "avif": "hero-interior-1920.avif",
+        "webp": "hero-interior-1920.webp",
+        "jpg": "hero-interior-1920.jpg",
+        "height": 1080
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAABQBACdASoYABAAPu1iqk2ppaQiMAgBMB2JQBOmUABqodXsjDSxNkLRczVgAOAy8JKRBhlre4DFYrM8bfmzmApAPKMiePhgBAS/J0MhH2SfQikrmUa7JcJhsDgbXfWRIAA=",
+    "source": {
+      "title": "Modern luxury living room with kitchen interior.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Modern_luxury_living_room_with_kitchen_interior.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 7360,
+      "originalHeight": 4912
+    },
+    "original": {
+      "width": 3840,
+      "height": 2563
+    }
+  },
+  {
+    "id": "about-workshop",
+    "alt": "Столярный цех: верстаки, инструменты и заготовки из дерева",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 900px) 100vw, 50vw",
+    "widths": [
+      640,
+      960
+    ],
+    "hero": false,
+    "portfolio": false,
+    "files": {
+      "640": {
+        "avif": "about-workshop-640.avif",
+        "webp": "about-workshop-640.webp",
+        "jpg": "about-workshop-640.jpg",
+        "height": 480
+      },
+      "960": {
+        "avif": "about-workshop-960.avif",
+        "webp": "about-workshop-960.webp",
+        "jpg": "about-workshop-960.jpg",
+        "height": 720
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRqgAAABXRUJQVlA4IJwAAADwBQCdASoYACQAPu1wsFCppqSiqrgKATAdiWUAwNwisz+crZYH6OK+p3WVq9Lky7s1eoNCTrk/IAD+8MleMKKQaakACbJykMPDLgYKbj23vs2yzZe8xziLKp552f3Noq+60MWiyWqTIAXKeSrOmkR4Wf00LNaLEyOTwY93yGownD8MZPcLGNcd4Jk3qM+Y2ioRixtKoY9+S/2YAAA=",
+    "source": {
+      "title": "Woodworking shop filled with tools, materials, and unfinished furniture pieces during a busy workday.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Woodworking_shop_filled_with_tools,_materials,_and_unfinished_furniture_pieces_during_a_busy_workday.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 4016,
+      "originalHeight": 6016
+    },
+    "original": {
+      "width": 3840,
+      "height": 5752
+    }
+  },
+  {
+    "id": "about-craftsman",
+    "alt": "Мастер строгает деревянную заготовку ручным рубанком в цехе",
+    "aspect": 0.75,
+    "sizes": "(max-width: 900px) 60vw, 28vw",
+    "widths": [
+      480,
+      720
+    ],
+    "hero": false,
+    "portfolio": false,
+    "files": {
+      "480": {
+        "avif": "about-craftsman-480.avif",
+        "webp": "about-craftsman-480.webp",
+        "jpg": "about-craftsman-480.jpg",
+        "height": 640
+      },
+      "720": {
+        "avif": "about-craftsman-720.avif",
+        "webp": "about-craftsman-720.webp",
+        "jpg": "about-craftsman-720.jpg",
+        "height": 960
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRqIAAABXRUJQVlA4IJYAAACwBgCdASoYACQAPu1qrE6ppiQiMBqoATAdiWUAwCgQZko95BigpwTqL0pn5WEjr4iQoF/jsoE//urzfxKU2AD+rALlOrox5pqbFCfSAYIZ7eCv4SNLOYPgIPGpeS12qirDHYX2+HhdDGjrFC2Hh91vPJZ732nopoR49HRmknF12YNpRXMLyWgbhHOAqxqGYaF7ivoIAAA=",
+    "source": {
+      "title": "Woodworker uses a planer on a long piece of wood in a workshop during daylight hours.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Woodworker_uses_a_planer_on_a_long_piece_of_wood_in_a_workshop_during_daylight_hours.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 4016,
+      "originalHeight": 6016
+    },
+    "original": {
+      "width": 3840,
+      "height": 5752
+    }
+  },
+  {
+    "id": "dir-kitchen",
+    "alt": "Кухня в сине-белой гамме с островом и открытыми полками",
+    "aspect": 1.5,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      560,
+      840
+    ],
+    "hero": false,
+    "portfolio": false,
+    "files": {
+      "560": {
+        "avif": "dir-kitchen-560.avif",
+        "webp": "dir-kitchen-560.webp",
+        "jpg": "dir-kitchen-560.jpg",
+        "height": 373
+      },
+      "840": {
+        "avif": "dir-kitchen-840.avif",
+        "webp": "dir-kitchen-840.webp",
+        "jpg": "dir-kitchen-840.jpg",
+        "height": 560
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRmYAAABXRUJQVlA4IFoAAAAQBACdASoYABAAPu1krU6ppaSiMAgBMB2JZQCdAB5AmOi9Lj/HjWeuAAD1/lb3x79CbRyIh40FylUOO8Y8eQmKKSwlTt1p7x6FFPN/96YLSZDb6g6lKveAAAA=",
+    "source": {
+      "title": "Blue white kitchen interior (Unsplash).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Blue_white_kitchen_interior_(Unsplash).jpg",
+      "author": "NeONBRAND neonbrand",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "originalWidth": 4896,
+      "originalHeight": 3264
+    },
+    "original": {
+      "width": 3840,
+      "height": 2560
+    }
+  },
+  {
+    "id": "dir-wardrobe",
+    "alt": "Встроенный деревянный шкаф с полками и штангой для одежды",
+    "aspect": 1.5,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      560,
+      840
+    ],
+    "hero": false,
+    "portfolio": false,
+    "files": {
+      "560": {
+        "avif": "dir-wardrobe-560.avif",
+        "webp": "dir-wardrobe-560.webp",
+        "jpg": "dir-wardrobe-560.jpg",
+        "height": 373
+      },
+      "840": {
+        "avif": "dir-wardrobe-840.avif",
+        "webp": "dir-wardrobe-840.webp",
+        "jpg": "dir-wardrobe-840.jpg",
+        "height": 560
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRpIAAABXRUJQVlA4IIYAAADQBQCdASoYACQAPuVgqE2pJaQiNVgIASAciUATpf4AH2/YC5H2pQNSieZxuFgYkQX/TiZzF7KAAP2Pupiwp4rQGtABBpVQCA5sA2nBIdxG4K1cu4VNZZ6jV2gnOdykhZdelfcbrbMhnfN4+nPtadWm1Ze6uYx4kuNji9bb2nkcqKbgHdsAAA==",
+    "source": {
+      "title": "Empty wooden wardrobe closeup.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Empty_wooden_wardrobe_closeup.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 4016,
+      "originalHeight": 6016
+    },
+    "original": {
+      "width": 3840,
+      "height": 5752
+    }
+  },
+  {
+    "id": "dir-living",
+    "alt": "Гостиная с мягким диваном, деревянным столом и видом на улицу",
+    "aspect": 1.5,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      560,
+      840
+    ],
+    "hero": false,
+    "portfolio": false,
+    "files": {
+      "560": {
+        "avif": "dir-living-560.avif",
+        "webp": "dir-living-560.webp",
+        "jpg": "dir-living-560.jpg",
+        "height": 373
+      },
+      "840": {
+        "avif": "dir-living-840.avif",
+        "webp": "dir-living-840.webp",
+        "jpg": "dir-living-840.jpg",
+        "height": 560
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAADQAwCdASoYABAAPu1iqk2ppaQiMAgBMB2JQBWAA+s/wc7ka5mR8IAA/hZYzthBDMpqs3ygxCjkRnE516Tog7kxFfg1jiv70iEj5a912/d8YrrGQkFUpvxymWacynbw7iWuDyiPOVAAAA==",
+    "source": {
+      "title": "Modern living room with stylish furniture and a view of the outdoors in a cozy apartment setting.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Modern_living_room_with_stylish_furniture_and_a_view_of_the_outdoors_in_a_cozy_apartment_setting.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 7360,
+      "originalHeight": 4912
+    },
+    "original": {
+      "width": 3840,
+      "height": 2563
+    }
+  },
+  {
+    "id": "dir-bedroom",
+    "alt": "Спальня с мягким изголовьем, подушками и светлыми шторами",
+    "aspect": 1.5,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      560,
+      840
+    ],
+    "hero": false,
+    "portfolio": false,
+    "files": {
+      "560": {
+        "avif": "dir-bedroom-560.avif",
+        "webp": "dir-bedroom-560.webp",
+        "jpg": "dir-bedroom-560.jpg",
+        "height": 373
+      },
+      "840": {
+        "avif": "dir-bedroom-840.avif",
+        "webp": "dir-bedroom-840.webp",
+        "jpg": "dir-bedroom-840.jpg",
+        "height": 560
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRpoAAABXRUJQVlA4II4AAAAwBgCdASoYACQAPu1mqlCppSOjqrgMATAdiWcAw3Ajbm4X4DtjnzAtaaKDbL8wH6cQeHSsHd8cQ5QAAP71lkeDC4RkPHcNqB0wt2g0k5Jw0LaF/wlbHS1brQL9lcbG/Naj8jVpJy4CP0m8v8zOStF+c/2r/16Mn7uCfGKpxGeWv1BDnEGXKMWL73lVgngA",
+    "source": {
+      "title": "Cozy modern bedroom with plush pillows and elegant drapes in bright daylight.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Cozy_modern_bedroom_with_plush_pillows_and_elegant_drapes_in_bright_daylight.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 4016,
+      "originalHeight": 6016
+    },
+    "original": {
+      "width": 3840,
+      "height": 5752
+    }
+  },
+  {
+    "id": "dir-dining",
+    "alt": "Обеденная зона с деревянным столом, стульями и настенным светом",
+    "aspect": 1.5,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      560,
+      840
+    ],
+    "hero": false,
+    "portfolio": false,
+    "files": {
+      "560": {
+        "avif": "dir-dining-560.avif",
+        "webp": "dir-dining-560.webp",
+        "jpg": "dir-dining-560.jpg",
+        "height": 373
+      },
+      "840": {
+        "avif": "dir-dining-840.avif",
+        "webp": "dir-dining-840.webp",
+        "jpg": "dir-dining-840.jpg",
+        "height": 560
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAADQAgCdASoYABAAA4BaJZgCdMoMjbFEPzudJBbsPBEsAP3i8Qp1sGp3M9eNbmwholfKYs4N01v3aUVIJ9yG3LfvnFAED460C1OE4kcJUKUCJEr2fol7IDgLVZIVL6qMoeexAAAA",
+    "source": {
+      "title": "Elegant dining area in a modern apartment with wooden accents and stylish decor.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Elegant_dining_area_in_a_modern_apartment_with_wooden_accents_and_stylish_decor.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 7360,
+      "originalHeight": 4912
+    },
+    "original": {
+      "width": 3840,
+      "height": 2563
+    }
+  },
+  {
+    "id": "dir-hall",
+    "alt": "Прихожая с деревянными панелями и светлым каменным полом",
+    "aspect": 1.5,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      560,
+      840
+    ],
+    "hero": false,
+    "portfolio": false,
+    "files": {
+      "560": {
+        "avif": "dir-hall-560.avif",
+        "webp": "dir-hall-560.webp",
+        "jpg": "dir-hall-560.jpg",
+        "height": 373
+      },
+      "840": {
+        "avif": "dir-hall-840.avif",
+        "webp": "dir-hall-840.webp",
+        "jpg": "dir-hall-840.jpg",
+        "height": 560
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRl4AAABXRUJQVlA4IFIAAADwAwCdASoYABAAPu1iqk2ppaQiMAgBMB2JZQCdACPpuFJJ9qa1JWNMAOJjwM0XHfNH9W1W0U2ozKZpbwJbzBOhkpDNW/5eHNmX15RsYmxRygAA",
+    "source": {
+      "title": "Bright hallway in a modern building showcasing wood and marble design elements.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Bright_hallway_in_a_modern_building_showcasing_wood_and_marble_design_elements.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 7360,
+      "originalHeight": 4912
+    },
+    "original": {
+      "width": 3840,
+      "height": 2563
+    }
+  },
+  {
+    "id": "portfolio-kitchen",
+    "alt": "Кухня с деревянными акцентами, открытыми полками и большими окнами",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      600,
+      900
+    ],
+    "hero": false,
+    "portfolio": true,
+    "files": {
+      "600": {
+        "avif": "portfolio-kitchen-600.avif",
+        "webp": "portfolio-kitchen-600.webp",
+        "jpg": "portfolio-kitchen-600.jpg",
+        "height": 450
+      },
+      "900": {
+        "avif": "portfolio-kitchen-900.avif",
+        "webp": "portfolio-kitchen-900.webp",
+        "jpg": "portfolio-kitchen-900.jpg",
+        "height": 675
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAAAwBACdASoYABAAPu1iqk2ppaQiMAgBMB2JYgCdMoACjjLi2JldhPqB6AAA/tDdMVl6bo9eLcGgzTcADqpn1PFCW8v1dB7Q5L7Q91HLFEzlU2wS9wZnbl/eob16ROocm//b9Gk6AAA=",
+    "source": {
+      "title": "This cozy kitchen showcases modern design elements.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:This_cozy_kitchen_showcases_modern_design_elements.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 6016,
+      "originalHeight": 4016
+    },
+    "original": {
+      "width": 3840,
+      "height": 2563
+    }
+  },
+  {
+    "id": "portfolio-wardrobe",
+    "alt": "Гардеробная с открытыми полками, подсветкой и зеркалом",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      600,
+      900
+    ],
+    "hero": false,
+    "portfolio": true,
+    "files": {
+      "600": {
+        "avif": "portfolio-wardrobe-600.avif",
+        "webp": "portfolio-wardrobe-600.webp",
+        "jpg": "portfolio-wardrobe-600.jpg",
+        "height": 450
+      },
+      "900": {
+        "avif": "portfolio-wardrobe-900.avif",
+        "webp": "portfolio-wardrobe-900.webp",
+        "jpg": "portfolio-wardrobe-900.jpg",
+        "height": 675
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRlIAAABXRUJQVlA4IEYAAABwAwCdASoYABAALrV2u12jqampiYC0SzgGYOHm5w7V6f+f7XAA/tOeYiILGcx6quICNNz92jDfAgzamw6GZNXMxGjDOYAA",
+    "source": {
+      "title": "Minimal Designer Wardrobe (Unsplash).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Minimal_Designer_Wardrobe_(Unsplash).jpg",
+      "author": "Igor Ovsyannykov igorovsyannykov",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "originalWidth": 5804,
+      "originalHeight": 3869
+    },
+    "original": {
+      "width": 3840,
+      "height": 2560
+    }
+  },
+  {
+    "id": "portfolio-living",
+    "alt": "Гостиная с книжным стеллажом во всю стену и синим диваном",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      600,
+      900
+    ],
+    "hero": false,
+    "portfolio": true,
+    "files": {
+      "600": {
+        "avif": "portfolio-living-600.avif",
+        "webp": "portfolio-living-600.webp",
+        "jpg": "portfolio-living-600.jpg",
+        "height": 450
+      },
+      "900": {
+        "avif": "portfolio-living-900.avif",
+        "webp": "portfolio-living-900.webp",
+        "jpg": "portfolio-living-900.jpg",
+        "height": 675
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRmwAAABXRUJQVlA4IGAAAAAwBACdASoYABAAPu1qrU8ppiQiMAgBMB2JZQCo9CGuF5TPnBKjMPR9goAA/tSb0xK1CkvZD4a82NcX4h0wCjzytl/rJNOvOw71v9yR9blxWELJNrV2iQ4qajCOoPvAAAA=",
+    "source": {
+      "title": "Bookshelf and blue couch (Unsplash).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Bookshelf_and_blue_couch_(Unsplash).jpg",
+      "author": "Ben Garratt wstn",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "originalWidth": 4600,
+      "originalHeight": 3071
+    },
+    "original": {
+      "width": 3840,
+      "height": 2564
+    }
+  },
+  {
+    "id": "portfolio-bedroom",
+    "alt": "Спальня в современном стиле с геометрическим панно у изголовья",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      600,
+      900
+    ],
+    "hero": false,
+    "portfolio": true,
+    "files": {
+      "600": {
+        "avif": "portfolio-bedroom-600.avif",
+        "webp": "portfolio-bedroom-600.webp",
+        "jpg": "portfolio-bedroom-600.jpg",
+        "height": 450
+      },
+      "900": {
+        "avif": "portfolio-bedroom-900.avif",
+        "webp": "portfolio-bedroom-900.webp",
+        "jpg": "portfolio-bedroom-900.jpg",
+        "height": 675
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAAAwBACdASoYABAAPu1kqU2ppaQiMAgBMB2JZwDImCPN/av/nvQ62RNpmLAA4mtxp2PbI1iGZ7BZozBgNbktV+VHxCQiAFHCGyP3wfd60J+OFTelDJjFRxHO/RzNAZsGNCJIEWAA",
+    "source": {
+      "title": "Modern bedroom design in a stylish hotel room featuring geometric patterns and soft linens.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Modern_bedroom_design_in_a_stylish_hotel_room_featuring_geometric_patterns_and_soft_linens.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 7360,
+      "originalHeight": 4912
+    },
+    "original": {
+      "width": 3840,
+      "height": 2563
+    }
+  },
+  {
+    "id": "portfolio-dining",
+    "alt": "Обеденный стол у окна в светлой комнате с растениями",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      600,
+      900
+    ],
+    "hero": false,
+    "portfolio": true,
+    "files": {
+      "600": {
+        "avif": "portfolio-dining-600.avif",
+        "webp": "portfolio-dining-600.webp",
+        "jpg": "portfolio-dining-600.jpg",
+        "height": 450
+      },
+      "900": {
+        "avif": "portfolio-dining-900.avif",
+        "webp": "portfolio-dining-900.webp",
+        "jpg": "portfolio-dining-900.jpg",
+        "height": 675
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRngAAABXRUJQVlA4IGwAAAAQBACdASoYABAAPu1oqk6ppiQiMAgBMB2JQBOmUABHjG3DcNajDxsiAAD8zcutzHTyPiMwR++oDG+JvRptcQDLmNZZnicF0424lGGtJY0q8xd3su5QSwZe3cQb2IltcIkkwc3/V8GyKwFHuAA=",
+    "source": {
+      "title": "Round table in a bright room (Unsplash).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Round_table_in_a_bright_room_(Unsplash).jpg",
+      "author": "Nirzar Pangarkar nirzar",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "originalWidth": 5000,
+      "originalHeight": 3333
+    },
+    "original": {
+      "width": 3840,
+      "height": 2560
+    }
+  },
+  {
+    "id": "portfolio-bath",
+    "alt": "Ванная комната с деревянной тумбой и круглым зеркалом",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      600,
+      900
+    ],
+    "hero": false,
+    "portfolio": true,
+    "files": {
+      "600": {
+        "avif": "portfolio-bath-600.avif",
+        "webp": "portfolio-bath-600.webp",
+        "jpg": "portfolio-bath-600.jpg",
+        "height": 450
+      },
+      "900": {
+        "avif": "portfolio-bath-900.avif",
+        "webp": "portfolio-bath-900.webp",
+        "jpg": "portfolio-bath-900.jpg",
+        "height": 675
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRo4AAABXRUJQVlA4IIIAAADQBQCdASoYACQAPu1wrVCppqQiqrgKATAdiWUAgssIxa+rC074glsxSvo8MBuXvi441VAL3bAAAP4/DVsfIJISjHz77S8XdL/6y03m54fm/peSn5bXjY1GeCBC0qq/qQLh0Rm9PTBe/o02PWYkGGKqEXOzeADJU4WbgOi+UY1wgAAA",
+    "source": {
+      "title": "Modern wooden vanity with round mirror in minimalistic interior design.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Modern_wooden_vanity_with_round_mirror_in_minimalistic_interior_design.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 4016,
+      "originalHeight": 6016
+    },
+    "original": {
+      "width": 3840,
+      "height": 5752
+    }
+  },
+  {
+    "id": "portfolio-hall",
+    "alt": "Прихожая с деревянной стеной и мраморным полом",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      600,
+      900
+    ],
+    "hero": false,
+    "portfolio": true,
+    "files": {
+      "600": {
+        "avif": "portfolio-hall-600.avif",
+        "webp": "portfolio-hall-600.webp",
+        "jpg": "portfolio-hall-600.jpg",
+        "height": 450
+      },
+      "900": {
+        "avif": "portfolio-hall-900.avif",
+        "webp": "portfolio-hall-900.webp",
+        "jpg": "portfolio-hall-900.jpg",
+        "height": 675
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRl4AAABXRUJQVlA4IFIAAADwAwCdASoYABAAPu1iqk2ppaQiMAgBMB2JZQCdACPpuFJJ9qa1JWNMAOJjwM0XHfNH9W1W0U2ozKZpbwJbzBOhkpDNW/5eHNmX15RsYmxRygAA",
+    "source": {
+      "title": "Bright hallway in a modern building showcasing wood and marble design elements.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Bright_hallway_in_a_modern_building_showcasing_wood_and_marble_design_elements.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 7360,
+      "originalHeight": 4912
+    },
+    "original": {
+      "width": 3840,
+      "height": 2563
+    }
+  },
+  {
+    "id": "portfolio-living-detail",
+    "alt": "Гостиная с диваном и деревянными журнальными столами",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw",
+    "widths": [
+      600,
+      900
+    ],
+    "hero": false,
+    "portfolio": true,
+    "files": {
+      "600": {
+        "avif": "portfolio-living-detail-600.avif",
+        "webp": "portfolio-living-detail-600.webp",
+        "jpg": "portfolio-living-detail-600.jpg",
+        "height": 450
+      },
+      "900": {
+        "avif": "portfolio-living-detail-900.avif",
+        "webp": "portfolio-living-detail-900.webp",
+        "jpg": "portfolio-living-detail-900.jpg",
+        "height": 675
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAAAQBACdASoYABEAPu1kqE2ppaOiMAgBMB2JQBbChD4D2QokizSI7uB4gAD94pD8A1UXqH6i4QS4MYFglBz1ArtjnDYhKBxgIWGjkWw37FP6/HJ4eulGg44uilJFAAAA",
+    "source": {
+      "title": "Coffee tables in front of a comfy sofa (Unsplash).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Coffee_tables_in_front_of_a_comfy_sofa_(Unsplash).jpg",
+      "author": "Sophia Baboolal sophiababoolal",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "originalWidth": 4000,
+      "originalHeight": 2857
+    },
+    "original": {
+      "width": 3840,
+      "height": 2743
+    }
+  },
+  {
+    "id": "material-oak",
+    "alt": "Крупным планом текстура шпона дуба",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 700px) 50vw, 25vw",
+    "widths": [
+      560
+    ],
+    "hero": false,
+    "portfolio": false,
+    "files": {
+      "560": {
+        "avif": "material-oak-560.avif",
+        "webp": "material-oak-560.webp",
+        "jpg": "material-oak-560.jpg",
+        "height": 420
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRkQAAABXRUJQVlA4IDgAAADwAgCdASoYABgAPu1wsFIppiSiqAgBMB2JZQAAQn7WAAD8DIh/e5aKRX6tJpFVgnHuweFHIEgAAA==",
+    "source": {
+      "title": "Oak veneer 01 diff 16k (Jandre van Heerden via Poly Haven).png",
+      "page": "https://commons.wikimedia.org/wiki/File:Oak_veneer_01_diff_16k_(Jandre_van_Heerden_via_Poly_Haven).png",
+      "author": "Jandre van Heerden (https://polyhaven.com/all?a=Jandre%20van%20Heerden)",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "originalWidth": 16384,
+      "originalHeight": 16384
+    },
+    "original": {
+      "width": 3840,
+      "height": 3840
+    }
+  },
+  {
+    "id": "material-walnut",
+    "alt": "Крупным планом текстура шпона американского ореха",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 700px) 50vw, 25vw",
+    "widths": [
+      560
+    ],
+    "hero": false,
+    "portfolio": false,
+    "files": {
+      "560": {
+        "avif": "material-walnut-560.avif",
+        "webp": "material-walnut-560.webp",
+        "jpg": "material-walnut-560.jpg",
+        "height": 420
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAAAQAwCdASoYABgAPu1wsVKppiSiqAgBMB2JaQDNhBdxjAAA/tFGy8x6n6BQAAAA",
+    "source": {
+      "title": "American walnut veneer diff 8k (PNG).png",
+      "page": "https://commons.wikimedia.org/wiki/File:American_walnut_veneer_diff_8k_(PNG).png",
+      "author": "Rico Cilliers (Processing) Charlotte Baglioni (Scanning) Dimitrios Savva Jenelle van Heerden (Scanning) Amal Kumar Rob Tuytel Dario Barresi (Processing)",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "originalWidth": 8192,
+      "originalHeight": 8192
+    },
+    "original": {
+      "width": 3840,
+      "height": 3840
+    }
+  },
+  {
+    "id": "material-hinges",
+    "alt": "Витрина с мебельными петлями и доводчиками",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 700px) 50vw, 25vw",
+    "widths": [
+      560
+    ],
+    "hero": false,
+    "portfolio": false,
+    "files": {
+      "560": {
+        "avif": "material-hinges-560.avif",
+        "webp": "material-hinges-560.webp",
+        "jpg": "material-hinges-560.jpg",
+        "height": 420
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRpQAAABXRUJQVlA4IIgAAABwBQCdASoYACQAPtVaok2oJaMiOrmYAQAaiWcAzrAYZDmH+z2dp1s367jAE5LTVX98M16IAM4TcHQcc+D5ISzzy55pk7w87ej/V5ntF+V4Wbq2LAtagSQL4O+QrXM8Ti6I1lCNoh5aq5IU8JtcUGorUPD+vc7/F0q5/3z27rCk3s1Oax8qKpAA",
+    "source": {
+      "title": "Various types of hinges displayed on a panel at a hardware store.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Various_types_of_hinges_displayed_on_a_panel_at_a_hardware_store.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 4016,
+      "originalHeight": 6016
+    },
+    "original": {
+      "width": 3840,
+      "height": 5752
+    }
+  },
+  {
+    "id": "material-finish",
+    "alt": "Краскопульт для нанесения финишного покрытия на деревянные фасады",
+    "aspect": 1.3333,
+    "sizes": "(max-width: 700px) 50vw, 25vw",
+    "widths": [
+      560
+    ],
+    "hero": false,
+    "portfolio": false,
+    "files": {
+      "560": {
+        "avif": "material-finish-560.avif",
+        "webp": "material-finish-560.webp",
+        "jpg": "material-finish-560.jpg",
+        "height": 420
+      }
+    },
+    "lqip": "data:image/webp;base64,UklGRq4AAABXRUJQVlA4IKIAAACwBQCdASoYACQAPu1wsFKppiSipWmZMB2JYwC/OCMzOsetAp1r2RUIp2Bnl0xqBgIfFofC/IAA/uRcE+SqDaAtlKD+LWKjl0R7sR8NxidSNq0bJvsKWoOcNPASjCARLcwDF3eLNhEMReCKdqdoCcLeVEdTCPAea3Hc98Ot7BjHYweFLAyLtNioYa3tFZCitLiU1hbyhKXgrnEIIYA1hRaAAAA=",
+    "source": {
+      "title": "Airbrush or paint spray gun for furniture and wood works.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Airbrush_or_paint_spray_gun_for_furniture_and_wood_works.jpg",
+      "author": "Shixart1985",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "originalWidth": 4016,
+      "originalHeight": 6016
+    },
+    "original": {
+      "width": 3840,
+      "height": 5752
+    }
+  }
+]
