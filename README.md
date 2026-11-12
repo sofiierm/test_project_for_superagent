@@ -22,7 +22,7 @@ npm run test:all      # всё подряд; нужен запущенный npm
 
 ```bash
 PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright npx playwright install chromium
-node scripts/screenshots.mjs
+npm run screenshots
 ```
 
 Если Playwright не находит браузер, укажите путь явно: `PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright`.

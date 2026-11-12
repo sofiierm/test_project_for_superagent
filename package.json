@@ -16,7 +16,8 @@
     "serve": "node scripts/serve.mjs",
     "test:layout": "node tests/layout.mjs",
     "test:contrast": "node scripts/check-contrast.mjs",
-    "test:all": "node tests/run.mjs && node tests/layout.mjs && node tests/e2e.mjs && node scripts/check-contrast.mjs"
+    "test:all": "node tests/run.mjs && node tests/layout.mjs && node tests/e2e.mjs && node scripts/check-contrast.mjs",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
