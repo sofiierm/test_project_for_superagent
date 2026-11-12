@@ -1,13 +1,8 @@
 node_modules/
-dist/
+data/
 test-results/
 playwright-report/
 .cache/
-.tmp-tools/
 .env
 .env.local
-leads.log
-# Исходные фотографии в высоком разрешении не публикуются: в репозитории
-# лежат только оптимизированные производные из assets/img.
-candidates/
 .DS_Store

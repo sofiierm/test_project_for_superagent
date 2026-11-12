@@ -1,185 +1,131 @@
-#!/usr/bin/env node
-// Скриншоты для визуальной проверки: контрольные разрешения, светлая и тёмная
-// темы, состояния меню, формы, лайтбокса и аккордеона.
-import fs from 'node:fs';
-import path from 'node:path';
+// Скриншоты для ревью: одинаковые сценарии, разрешения и состояния.
+//
+// Скрипт поднимает сервер на чистой временной базе, чтобы кадры были
+// воспроизводимыми, и складывает PNG в docs/screenshots/.
 import { chromium } from 'playwright';
+import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
-const ROOT = path.resolve(import.meta.dirname, '..');
-const OUT = path.join(ROOT, 'test-results/screens');
-const BASE = process.env.BASE_URL || 'http://127.0.0.1:4173';
-fs.mkdirSync(OUT, { recursive: true });
+const PORT = Number(process.env.SHOT_PORT || 4322);
+const BASE = `http://127.0.0.1:${PORT}`;
+const OUT = path.resolve('docs/screenshots');
+const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ca-shots-'));
 
-// Быстрый режим для CI: два разрешения вместо пяти и без полностраничных
-// снимков — полный набор снимается локально перед выкладкой.
-const QUICK = process.env.SHOTS_QUICK === '1';
+const VIEWPORTS = {
+  desktop: { width: 1440, height: 900 },
+  mobile: { width: 390, height: 844 },
+};
 
-const ALL_VIEWPORTS = [
-  { name: 'mobile-320', width: 320, height: 640, deviceScaleFactor: 1, isMobile: true, hasTouch: true },
-  { name: 'mobile-390', width: 390, height: 844, deviceScaleFactor: 1, isMobile: true, hasTouch: true },
-  { name: 'tablet-768', width: 768, height: 1024, deviceScaleFactor: 1, hasTouch: true },
-  { name: 'desktop-1366', width: 1366, height: 768, deviceScaleFactor: 1 },
-  { name: 'desktop-1920', width: 1920, height: 1080, deviceScaleFactor: 1 },
+// fullPage включаем только там, где важен весь поток страницы; для обзора
+// достаточно первого экрана — так кадры читаются с первого взгляда.
+const SHOTS = [
+  { name: 'after-dashboard-desktop', path: '/', viewport: 'desktop', fullPage: false },
+  { name: 'after-dashboard-mobile', path: '/', viewport: 'mobile', fullPage: false },
+  { name: 'after-accounts-desktop', path: '/accounts', viewport: 'desktop', fullPage: true },
+  { name: 'after-account-desktop', path: '/accounts/1', viewport: 'desktop', fullPage: true },
+  { name: 'after-videos-desktop', path: '/videos', viewport: 'desktop', fullPage: true },
+  { name: 'after-video-desktop', path: '/videos/1', viewport: 'desktop', fullPage: true },
+  { name: 'after-help-desktop', path: '/help', viewport: 'desktop', fullPage: true },
+  { name: 'after-dashboard-empty', path: '/', viewport: 'desktop', fullPage: false, empty: true },
 ];
 
-const VIEWPORTS = QUICK
-  ? ALL_VIEWPORTS.filter((viewport) => viewport.name === 'mobile-390' || viewport.name === 'desktop-1366')
-  : ALL_VIEWPORTS;
+async function waitForServer(url, timeoutMs = 30_000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) return;
+    } catch { /* поднимается */ }
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  throw new Error('сервер не поднялся');
+}
+
+async function startServer(dir, port, { seed = true } = {}) {
+  const child = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'scripts/serve.mjs'], {
+    env: {
+      ...process.env,
+      PORT: String(port),
+      DATA_DIR: dir,
+      DB_PATH: path.join(dir, 'shots.db'),
+      PROVIDER: 'demo',
+      // Пустое состояние снимаем на сервере без демо-наполнения.
+      SEED_DEMO: seed ? 'true' : 'false',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  child.stdout.resume();
+  child.stderr.resume();
+  await waitForServer(`http://127.0.0.1:${port}/api/health`);
+  return child;
+}
+
+fs.mkdirSync(OUT, { recursive: true });
+const server = await startServer(dataDir, PORT);
+const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ca-empty-'));
+const EMPTY_PORT = PORT + 1;
+const emptyServer = await startServer(emptyDir, EMPTY_PORT, { seed: false });
 
 const browser = await chromium.launch();
-const consoleErrors = [];
-const failures = [];
+const written = [];
 
-async function newPage(viewport, theme) {
-  const context = await browser.newContext({
-    viewport: { width: viewport.width, height: viewport.height },
-    deviceScaleFactor: viewport.deviceScaleFactor,
-    isMobile: Boolean(viewport.isMobile),
-    hasTouch: Boolean(viewport.hasTouch),
-    locale: 'ru-RU',
-    colorScheme: theme,
-    reducedMotion: 'no-preference',
-  });
-  const page = await context.newPage();
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') consoleErrors.push(`[${viewport.name}/${theme}] ${msg.text()}`);
-  });
-  page.on('pageerror', (error) => consoleErrors.push(`[${viewport.name}/${theme}] pageerror: ${error.message}`));
-  page.on('requestfailed', (request) => {
-    const url = request.url();
-    if (url.startsWith(BASE)) failures.push(`[${viewport.name}/${theme}] request failed: ${url}`);
-  });
-  page.on('response', (response) => {
-    if (response.url().startsWith(BASE) && response.status() >= 400) {
-      failures.push(`[${viewport.name}/${theme}] HTTP ${response.status()}: ${response.url()}`);
-    }
-  });
-  // Баннер cookie перекрывает нижние элементы на мобильном — в скриншотах
-  // он не нужен, кроме отдельного кадра ниже.
-  await context.addInitScript(() => {
-    try {
-      localStorage.setItem('cookie-consent', 'necessary');
-    } catch {
-      /* ignore */
-    }
-  });
-  return { context, page };
-}
-
-// Баннер cookie не должен перекрывать нижние элементы в кадрах.
-async function closeBanner(page) {
-  const accept = page.locator('[data-cookie-accept]');
-  if (await accept.count()) {
-    const visible = await accept.first().isVisible().catch(() => false);
-    if (visible) await accept.first().click().catch(() => {});
-  }
-}
-
-for (const viewport of VIEWPORTS) {
-  for (const theme of ['light', 'dark']) {
-    const { context, page } = await newPage(viewport, theme);
-    console.log('viewport', viewport.name, theme);
-    await page.goto(BASE + '/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(400);
-
-    // Прокрутить всю страницу, чтобы сработали lazy-load и reveal-анимации.
-    await page.evaluate(async () => {
-      const step = window.innerHeight * 0.8;
-      for (let y = 0; y < document.body.scrollHeight; y += step) {
-        window.scrollTo(0, y);
-        await new Promise((r) => setTimeout(r, 60));
-      }
-      window.scrollTo(0, 0);
-      await new Promise((r) => setTimeout(r, 250));
-    });
-    await closeBanner(page);
-    await page.waitForTimeout(300);
-
-    const themeState = await page.evaluate(() => document.documentElement.dataset.theme);
-    if (themeState !== theme) failures.push(`[${viewport.name}] тема ${themeState} вместо ${theme}`);
-
-    await page.screenshot({ path: path.join(OUT, `${viewport.name}-${theme}-01-hero.png`) });
-    if (!QUICK && (viewport.name === 'desktop-1366' || viewport.name === 'mobile-390')) {
-      await page.screenshot({ path: path.join(OUT, `${viewport.name}-${theme}-full.png`), fullPage: true });
-    }
-
-    if (!QUICK && viewport.name === 'desktop-1366') {
-      for (const id of ['about', 'benefits', 'directions', 'process', 'portfolio', 'materials', 'reviews', 'faq', 'contact', 'contacts']) {
-        const section = page.locator(`#${id}`);
-        if (await section.count()) {
-          await section.scrollIntoViewIfNeeded();
-          await page.waitForTimeout(250);
-          await page.screenshot({ path: path.join(OUT, `${viewport.name}-${theme}-sec-${id}.png`) });
-        }
-      }
-    }
-
-    await context.close();
-  }
-}
-
-/* --------------------------- интерактивные состояния (desktop + mobile) */
-for (const viewport of QUICK ? VIEWPORTS : [VIEWPORTS[1], VIEWPORTS[3]]) {
-  for (const theme of ['light', 'dark']) {
-    const { context, page } = await newPage(viewport, theme);
-    console.log('viewport', viewport.name, theme);
-    await page.goto(BASE + '/', { waitUntil: 'networkidle' });
-
-    // Меню (мобильный бургер).
-    if (viewport.name === 'mobile-390') {
-      await page.click('[data-burger]');
-      await page.waitForTimeout(250);
-      await page.screenshot({ path: path.join(OUT, `${viewport.name}-${theme}-menu.png`) });
-      await page.click('[data-burger]');
-      await page.waitForTimeout(200);
-    }
-
-    // Модальное окно заявки.
-    console.log('  modal', viewport.name, theme);
-    await page.locator('[data-open-lead]:visible').first().click();
-    await page.waitForTimeout(350);
-    await page.screenshot({ path: path.join(OUT, `${viewport.name}-${theme}-modal.png`) });
-
-    // Ошибки валидации.
-    await page.click('#lead-modal [data-submit]');
-    await page.waitForTimeout(300);
-    await page.screenshot({ path: path.join(OUT, `${viewport.name}-${theme}-modal-errors.png`) });
-
-    // Заполнение и успешная отправка.
-    await page.fill('#lead-modal-name', 'Анна');
-    await page.fill('#lead-modal-phone', '9161234567');
-    await page.check('#lead-modal input[name="consent"]');
-    await page.click('#lead-modal [data-submit]');
-    await page.waitForTimeout(1200);
-    await page.screenshot({ path: path.join(OUT, `${viewport.name}-${theme}-modal-success.png`) });
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
-
-    // Лайтбокс портфолио.
-    console.log('  lightbox', viewport.name, theme);
-    await page.locator('#portfolio').scrollIntoViewIfNeeded();
-    await page.waitForTimeout(300);
-    await page.click('[data-lightbox="0"]');
-    await page.waitForTimeout(500);
-    await page.screenshot({ path: path.join(OUT, `${viewport.name}-${theme}-lightbox.png`) });
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
-
-    // FAQ: раскрытие второго вопроса.
-    console.log('  faq', viewport.name, theme);
-    await page.locator('#faq').scrollIntoViewIfNeeded();
-    await page.click('#faq-q-1');
-    await page.waitForTimeout(300);
-    await page.screenshot({ path: path.join(OUT, `${viewport.name}-${theme}-faq.png`) });
-
-    await context.close();
-  }
+for (const shot of SHOTS) {
+  const viewport = VIEWPORTS[shot.viewport];
+  const page = await browser.newPage({ viewport, deviceScaleFactor: 1, locale: 'ru-RU' });
+  const base = shot.empty ? `http://127.0.0.1:${EMPTY_PORT}` : BASE;
+  await page.goto(base + shot.path, { waitUntil: 'networkidle' });
+  await page.evaluate(() => document.fonts.ready);
+  // Гасим анимации: иначе кадр ловит середину перехода.
+  await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; animation: none !important; }' });
+  await page.waitForTimeout(250);
+  const file = path.join(OUT, `${shot.name}.png`);
+  await page.screenshot({ path: file, fullPage: shot.fullPage });
+  // Манифест фиксирует, что именно попало в кадр: так ревьюер и проверки
+  // видят содержимое, не полагаясь на «файл существует».
+  const facts = await page.evaluate(() => ({
+    title: document.title,
+    h1: document.querySelector('h1')?.textContent?.trim() ?? '',
+    h2: [...document.querySelectorAll('h2')].map((h) => h.textContent.trim()).slice(0, 8),
+    tableRows: document.querySelectorAll('table.data tbody tr').length,
+    chartCount: document.querySelectorAll('svg.chart').length,
+    statValues: [...document.querySelectorAll('.stat__value')].map((s) => s.textContent.trim()).slice(0, 6),
+    insightTitles: [...document.querySelectorAll('.insight__title')].map((s) => s.textContent.trim()).slice(0, 4),
+    hasNaN: /NaN|undefined/.test(document.body.innerText),
+    viewport: { width: window.innerWidth, height: window.innerHeight },
+    scrollHeight: document.documentElement.scrollHeight,
+  }));
+  written.push({ file, ...facts });
+  await page.close();
 }
 
 await browser.close();
+server.kill('SIGTERM');
+emptyServer.kill('SIGTERM');
+fs.rmSync(dataDir, { recursive: true, force: true });
+fs.rmSync(emptyDir, { recursive: true, force: true });
 
-fs.writeFileSync(path.join(ROOT, 'test-results/screens/report.json'), JSON.stringify({ consoleErrors, failures }, null, 2));
-console.log('screens:', fs.readdirSync(OUT).length - 1);
-if (failures.length) console.log('FAILURES:\n' + failures.join('\n'));
-if (consoleErrors.length) console.log('CONSOLE ERRORS:\n' + consoleErrors.join('\n'));
-if (!failures.length && !consoleErrors.length) console.log('нет ошибок консоли и сетевых сбоев');
+const manifest = written.map((shot) => ({
+  file: path.relative(process.cwd(), shot.file),
+  bytes: fs.statSync(shot.file).size,
+  ...shot,
+  file: path.relative(process.cwd(), shot.file),
+}));
+fs.writeFileSync(path.join(OUT, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+
+let problems = 0;
+for (const shot of written) {
+  const size = fs.statSync(shot.file).size;
+  const empty = size < 5_000;
+  const broken = shot.hasNaN;
+  if (empty || broken) problems += 1;
+  process.stdout.write(
+    `${empty || broken ? '✗' : '✓'} ${path.relative(process.cwd(), shot.file)} — ${(size / 1024).toFixed(0)} КБ, «${shot.h1}», строк ${shot.tableRows}, графиков ${shot.chartCount}${broken ? ', ЕСТЬ NaN' : ''}\n`,
+  );
+}
+process.stdout.write(`Манифест: ${path.join(OUT, 'manifest.json')}\n`);
+if (problems) {
+  process.stderr.write(`Проблемных кадров: ${problems}\n`);
+  process.exit(1);
+}
