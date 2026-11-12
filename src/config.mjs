@@ -1,6 +1,37 @@
 // Конфигурация сервиса. Все значения читаются из переменных окружения,
 // чтобы сервис можно было запускать локально, в CI и на хостинге без правок кода.
+import fs from 'node:fs';
 import path from 'node:path';
+
+// Читаем .env, если он есть: README и .env.example обещают, что скопированный
+// файл подхватится сам. Формат простой (KEY=VALUE, # — комментарий), поэтому
+// обходимся без зависимости. Уже заданные переменные окружения не перетираем:
+// приоритет у того, что передали в командной строке.
+function loadDotEnv() {
+  const file = path.resolve('.env');
+  if (!fs.existsSync(file)) return;
+  let text;
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch {
+    return;
+  }
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) continue;
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    if (process.env[key] === undefined) process.env[key] = value;
+  }
+}
+
+loadDotEnv();
 
 function bool(value, fallback) {
   if (value === undefined || value === '') return fallback;
