@@ -52,9 +52,10 @@ for (const [width, height] of VIEWPORTS) {
     clientW: document.documentElement.clientWidth,
     overflowing: [...document.querySelectorAll('body *')]
       .filter((el) => {
-        if (el.closest('.hp, .skip-link')) return false;
-        const style = getComputedStyle(el);
-        if (style.position === 'fixed' || style.position === 'absolute') return false;
+        // Служебные элементы вне потока (honeypot, skip-link, скрытые панели)
+        // не считаем: они намеренно уведены за край.
+        if (el.closest('.hp, .skip-link, [hidden], .modal[hidden]')) return false;
+        if (el.getAttribute('aria-hidden') === 'true' && el.getBoundingClientRect().height === 0) return false;
         const rect = el.getBoundingClientRect();
         return rect.width > 0 && rect.right > window.innerWidth + 1;
       })
