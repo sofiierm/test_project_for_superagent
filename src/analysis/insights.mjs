@@ -5,8 +5,8 @@
 // основан вывод, чтобы пользователь мог его перепроверить.
 import { formatNumber, formatPercent, formatShortDate } from '../lib/dates.mjs';
 import {
-  bestTimes, cadence, engagementRate, findOutliers, periodDelta, rankVideos,
-  summariseVideos,
+  bestTimes, cadence, engagementRate, erBenchmark, findOutliers, periodDelta,
+  rankVideos, summariseVideos,
 } from './metrics.mjs';
 
 const LEVEL_ORDER = { critical: 0, warning: 1, opportunity: 2, info: 3 };
@@ -62,14 +62,14 @@ export function buildInsights(videos, { followers = 0, account = null, now = new
   }
 
   // 2. ER против ориентира по платформе.
-  const benchmark = { instagram: 4, youtube: 2.5, tiktok: 5 }[account?.platform] ?? null;
+  const benchmark = erBenchmark(account?.platform);
   if (benchmark && summary.count >= 5) {
     if (summary.avgEr < benchmark * 0.6) {
       insights.push({
         id: 'er-low',
         level: 'warning',
         title: `Вовлечённость ниже ориентира: ${formatPercent(summary.avgEr)}`,
-        detail: `Средний ER по ${summary.count} роликам — ${formatPercent(summary.avgEr)} при типичном значении для ${platformName(account.platform)} около ${formatPercent(benchmark)}.`,
+        detail: `Средний ER по ${summary.count} роликам — ${formatPercent(summary.avgEr)} при ориентире для ${platformName(account.platform)} около ${formatPercent(benchmark)}.`,
         action: 'Добавьте вопрос или призыв в конец ролика: это самый дешёвый способ поднять комментарии.',
         metric: 'er',
       });
@@ -78,7 +78,7 @@ export function buildInsights(videos, { followers = 0, account = null, now = new
         id: 'er-high',
         level: 'opportunity',
         title: `Вовлечённость выше ориентира: ${formatPercent(summary.avgEr)}`,
-        detail: `Средний ER — ${formatPercent(summary.avgEr)} против типичных ${formatPercent(benchmark)} для ${platformName(account.platform)}. Аудитория реагирует активно.`,
+        detail: `Средний ER — ${formatPercent(summary.avgEr)} против ориентира ${formatPercent(benchmark)} для ${platformName(account.platform)}. Аудитория реагирует активно.`,
         action: 'Этот уровень вовлечённости можно монетизировать: предложите аудитории продукт или подписку.',
         metric: 'er',
       });

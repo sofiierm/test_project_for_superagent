@@ -1,7 +1,7 @@
 [
   {
     "file": "docs/screenshots/after-dashboard-desktop.png",
-    "bytes": 241131,
+    "bytes": 240811,
     "title": "Обзор — Creator Analytics",
     "h1": "Обзор",
     "h2": [
@@ -39,7 +39,7 @@
   },
   {
     "file": "docs/screenshots/after-dashboard-mobile.png",
-    "bytes": 91501,
+    "bytes": 93787,
     "title": "Обзор — Creator Analytics",
     "h1": "Обзор",
     "h2": [
@@ -73,7 +73,7 @@
       "width": 390,
       "height": 844
     },
-    "scrollHeight": 5266
+    "scrollHeight": 5243
   },
   {
     "file": "docs/screenshots/after-accounts-desktop.png",
@@ -96,7 +96,7 @@
   },
   {
     "file": "docs/screenshots/after-account-desktop.png",
-    "bytes": 974031,
+    "bytes": 973737,
     "title": "Маша ест — Creator Analytics",
     "h1": "Маша ест",
     "h2": [
@@ -152,7 +152,7 @@
   },
   {
     "file": "docs/screenshots/after-video-desktop.png",
-    "bytes": 264929,
+    "bytes": 264580,
     "title": "Смотри до конца, если хочешь результат — Ужин за 20 минут из того, что есть в холодильнике — Creator Analytics",
     "h1": "Смотри до конца, если хочешь результат — Ужин за 20 минут из того, что есть в холодильнике",
     "h2": [
@@ -181,7 +181,7 @@
   },
   {
     "file": "docs/screenshots/after-help-desktop.png",
-    "bytes": 509735,
+    "bytes": 536949,
     "title": "Как это работает — Creator Analytics",
     "h1": "Как это работает",
     "h2": [
@@ -202,7 +202,7 @@
       "width": 1440,
       "height": 900
     },
-    "scrollHeight": 2080
+    "scrollHeight": 2152
   },
   {
     "file": "docs/screenshots/after-dashboard-empty.png",

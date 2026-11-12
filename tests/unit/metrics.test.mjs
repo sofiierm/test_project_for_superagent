@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  bestTimes, buildSeries, cadence, engagementRate, findOutliers, median,
+  bestTimes, buildSeries, cadence, engagementRate, erBenchmark, findOutliers, median,
   periodDelta, rankVideos, summariseVideos,
 } from '../../src/analysis/metrics.mjs';
 import {
@@ -254,4 +254,29 @@ test('на обзоре нескольких аккаунтов ритм не с
   if (cadenceInsights.length) {
     assert.match(cadenceInsights[0].title, /@[ab]/);
   }
+});
+
+test('ориентиры ER заданы для трёх платформ и только для них', () => {
+  assert.equal(erBenchmark('instagram'), 4);
+  assert.equal(erBenchmark('youtube'), 2.5);
+  assert.equal(erBenchmark('tiktok'), 5);
+  assert.equal(erBenchmark('vk'), null);
+  assert.equal(erBenchmark(undefined), null);
+});
+
+test('низкий ER даёт предупреждение со ссылкой на ориентир платформы', () => {
+  const videos = Array.from({ length: 6 }, (_, i) => video({
+    id: i + 1,
+    views: 100_000,
+    likes: 300,
+    comments: 20,
+    shares: 5,
+    saves: 5,
+    publishedAt: new Date(Date.now() - (i + 1) * DAY).toISOString(),
+  }));
+  const insights = buildInsights(videos, { followers: 10_000, account: { platform: 'instagram' } });
+  const low = insights.find((i) => i.id === 'er-low');
+  assert.ok(low, 'нет вывода о низком ER');
+  // В тексте — именно ориентир, а не «типичное значение» без источника.
+  assert.match(low.detail, /ориентир/i);
 });

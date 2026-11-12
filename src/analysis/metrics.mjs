@@ -38,6 +38,20 @@ export function engagements(video) {
     + (Number(video.shares) || 0) + (Number(video.saves) || 0);
 }
 
+// Ориентиры вовлечённости по платформам, в процентах ER.
+//
+// Это НЕ официальные данные платформ и не результат нашего исследования.
+// Отраслевые публикации и бенчмарк-отчёты (Metricool, Later, Rival IQ) из года
+// в год называют для Instagram примерно 3–6 %, для YouTube — 2–4 %, для TikTok
+// — 4–8 %; здесь взята середина диапазонов. Значения нужны как грубая система
+// координат: «ER 0,8 % при ориентире 4 %» — сигнал, «ER 6 %» — норма.
+// Если у пользователя есть свои цифры, их можно задать в ER_BENCHMARKS.
+export const ER_BENCHMARKS = Object.freeze({ instagram: 4, youtube: 2.5, tiktok: 5 });
+
+export function erBenchmark(platform) {
+  return ER_BENCHMARKS[platform] ?? null;
+}
+
 export function engagementRate(video) {
   const views = Number(video.views) || 0;
   return views ? (engagements(video) / views) * 100 : 0;
