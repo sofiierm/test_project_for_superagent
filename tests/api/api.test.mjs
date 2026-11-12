@@ -227,6 +227,62 @@ test('API видео фильтрует по платформе', async () => {
   for (const video of videos) assert.equal(video.platform, 'youtube');
 });
 
+test('нечисловой account в /api/videos — 422, а не все ролики', async () => {
+  // Раньше Number('abc') давал NaN, фильтр молча исчезал, и клиент получал
+  // ролики всех аккаунтов — правдоподобный, но чужой ответ.
+  const response = await request('/api/videos?account=abc');
+  assert.equal(response.status, 422);
+  const payload = await response.json();
+  assert.match(payload.error, /числовым id/);
+  assert.equal(payload.videos, undefined, 'вместо ошибки пришли данные');
+});
+
+test('неизвестный account в /api/videos — 404, а не пустой список', async () => {
+  const response = await request('/api/videos?account=99999');
+  assert.equal(response.status, 404);
+  assert.match((await response.json()).error, /не найден/i);
+});
+
+test('фильтр по account отдаёт только ролики этого аккаунта', async () => {
+  const accounts = listAccounts();
+  const response = await request(`/api/videos?account=${accounts[0].id}`);
+  assert.equal(response.status, 200);
+  const { videos } = await response.json();
+  assert.ok(videos.length > 0);
+  assert.deepEqual([...new Set(videos.map((v) => v.accountId))], [accounts[0].id]);
+});
+
+test('неизвестная платформа в /api/videos — 422 со списком допустимых', async () => {
+  const response = await request('/api/videos?platform=myspace');
+  assert.equal(response.status, 422);
+  const payload = await response.json();
+  assert.match(payload.hint, /instagram/);
+  assert.match(payload.hint, /youtube/);
+  assert.match(payload.hint, /tiktok/);
+});
+
+test('CSV с нечисловым account не отдаёт чужие данные', async () => {
+  const response = await request('/api/videos.csv?account=abc');
+  assert.equal(response.status, 422);
+  assert.doesNotMatch(await response.text(), /platform;handle/, 'вместо ошибки пришёл CSV');
+});
+
+test('вовлечённость аккаунта включает сохранения и сходится с роликами', async () => {
+  // ТЗ §5: вовлечённость = лайки + комментарии + репосты + сохранения.
+  // Агрегат по аккаунту однажды потерял сохранения, и ER аккаунта разошёлся
+  // с ER его же роликов.
+  const account = listAccounts()[0];
+  const videosResponse = await request(`/api/videos?account=${account.id}`);
+  const { videos } = await videosResponse.json();
+  const engagement = videos.reduce(
+    (sum, v) => sum + v.likes + v.comments + v.shares + v.saves, 0,
+  );
+  const accountsResponse = await request('/api/accounts');
+  const fromApi = (await accountsResponse.json()).accounts.find((a) => a.id === account.id);
+  assert.equal(fromApi.totalEngagements, engagement);
+  assert.ok(videos.some((v) => v.saves > 0), 'в демо-данных нет сохранений — проверка ничего не значит');
+});
+
 test('некорректный JSON в теле возвращает 400, а не падает', async () => {
   const response = await request('/api/accounts', { method: 'POST', body: '{не json' });
   assert.equal(response.status, 400);
