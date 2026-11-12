@@ -55,9 +55,10 @@ const server = http.createServer(async (req, res) => {
 
   let pathname = decodeURIComponent(url.pathname);
   if (pathname.endsWith('/')) pathname += 'index.html';
-  let file = path.join(DIST, pathname);
-
-  if (!file.startsWith(DIST)) {
+  // path.join нормализует «..», поэтому сравниваем не строковый префикс, а
+  // реальный каталог: иначе /dist-сосед тоже прошёл бы проверку.
+  const file = path.resolve(DIST, '.' + pathname);
+  if (file !== DIST && !file.startsWith(DIST + path.sep)) {
     send(res, 403, 'Forbidden');
     return;
   }
