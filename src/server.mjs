@@ -9,7 +9,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config } from './config.mjs';
 import { getDb } from './db/index.mjs';
-import { deleteAccount, getAccount, listAccounts } from './db/accounts.mjs';
+import {
+  deleteAccount, getAccount, isPlatform, listAccounts, platforms,
+} from './db/accounts.mjs';
 import { listVideos } from './db/videos.mjs';
 import { listRuns } from './db/runs.mjs';
 import { addAccount, resolveProvider, syncAccount } from './providers/index.mjs';
@@ -121,6 +123,50 @@ function notFound(res, mode) {
  * Фабрика сервера. Отдельная функция нужна тестам: они поднимают сервер на
  * случайном порту и на изолированной базе.
  */
+/**
+ * Разбор фильтров `/api/videos` и `/api/videos.csv`.
+ *
+ * Раньше нечисловой `account` превращался в `NaN`, фильтр молча исчезал, и
+ * клиент получал ролики всех аккаунтов — правдоподобный, но чужой ответ.
+ * Теперь мусорный параметр — 422, а неизвестный id — 404: существование
+ * чужих аккаунтов не подтверждаем (пригодится для #7).
+ */
+function parseVideoFilter(url) {
+  const platform = url.searchParams.get('platform');
+  const rawAccount = url.searchParams.get('account');
+  const value = { platform: null, accountId: null };
+
+  if (platform) {
+    if (!isPlatform(platform)) {
+      return {
+        error: {
+          status: 422,
+          body: { error: `Неизвестная платформа «${platform}».`, hint: `Доступны: ${platforms.join(', ')}.` },
+        },
+      };
+    }
+    value.platform = platform.toLowerCase();
+  }
+
+  if (rawAccount) {
+    const id = Number(rawAccount);
+    if (!Number.isInteger(id) || id <= 0) {
+      return {
+        error: {
+          status: 422,
+          body: { error: `«account» должен быть числовым id, получено «${rawAccount}».` },
+        },
+      };
+    }
+    if (!getAccount(id)) {
+      return { error: { status: 404, body: { error: 'Аккаунт не найден.' } } };
+    }
+    value.accountId = id;
+  }
+
+  return { value, error: null };
+}
+
 export function createServer({ mode = 'demo', providerReason = '' } = {}) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -214,20 +260,17 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
       }
 
       if (route === '/api/videos' && req.method === 'GET') {
-        const platform = url.searchParams.get('platform');
-        const accountId = url.searchParams.get('account');
+        const filter = parseVideoFilter(url);
+        if (filter.error) return sendJson(res, filter.error.status, filter.error.body);
         return sendJson(res, 200, {
-          videos: prepareVideos(listVideos({
-            platform: platform || null,
-            accountId: accountId ? Number(accountId) : null,
-            limit: 500,
-          })),
+          videos: prepareVideos(listVideos({ ...filter.value, limit: 500 })),
         });
       }
 
       if (route === '/api/videos.csv' && req.method === 'GET') {
-        const platform = url.searchParams.get('platform');
-        const csv = videosToCsv(prepareVideos(listVideos({ platform: platform || null, limit: 5000 })));
+        const filter = parseVideoFilter(url);
+        if (filter.error) return sendJson(res, filter.error.status, filter.error.body);
+        const csv = videosToCsv(prepareVideos(listVideos({ ...filter.value, limit: 5000 })));
         res.writeHead(200, {
           'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': 'attachment; filename="creator-analytics-videos.csv"',

@@ -35,7 +35,9 @@ export function listAccounts(db = getDb()) {
     SELECT a.*,
            (SELECT COUNT(*) FROM videos v WHERE v.account_id = a.id) AS videos_count,
            (SELECT COALESCE(SUM(v.views), 0) FROM videos v WHERE v.account_id = a.id) AS total_views,
-           (SELECT COALESCE(SUM(v.likes + v.comments + v.shares), 0) FROM videos v WHERE v.account_id = a.id) AS total_engagements,
+           -- Вовлечённость по определению ТЗ §5 включает сохранения.
+           -- Без них ER аккаунта расходился с ER его же роликов.
+           (SELECT COALESCE(SUM(v.likes + v.comments + v.shares + v.saves), 0) FROM videos v WHERE v.account_id = a.id) AS total_engagements,
            (SELECT MAX(v.published_at) FROM videos v WHERE v.account_id = a.id) AS last_published_at
     FROM accounts a
     ORDER BY a.platform, a.handle
