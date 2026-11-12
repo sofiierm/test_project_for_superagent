@@ -1,0 +1,226 @@
+[
+  {
+    "file": "docs/screenshots/after-dashboard-desktop.png",
+    "bytes": 241099,
+    "title": "Обзор — Creator Analytics",
+    "h1": "Обзор",
+    "h2": [
+      "Динамика просмотров",
+      "Ролики с наибольшим охватом",
+      "Что говорят данные",
+      "Аккаунты",
+      "Темы контента",
+      "Тональность",
+      "Платформы",
+      "Приёмы подачи"
+    ],
+    "tableRows": 9,
+    "chartCount": 1,
+    "statValues": [
+      "7 181 153",
+      "6,8%",
+      "274 634",
+      "1 364 399",
+      "1,9 млн",
+      "5,6%"
+    ],
+    "insightTitles": [
+      "Охват вырос на 35,5%",
+      "Один ролик собрал 2 560 708 просмотров",
+      "Короткие ролики вовлекают сильнее",
+      "Самый слабый ролик собрал 11 936 просмотров"
+    ],
+    "hasNaN": false,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "scrollHeight": 2683
+  },
+  {
+    "file": "docs/screenshots/after-dashboard-mobile.png",
+    "bytes": 91406,
+    "title": "Обзор — Creator Analytics",
+    "h1": "Обзор",
+    "h2": [
+      "Динамика просмотров",
+      "Ролики с наибольшим охватом",
+      "Что говорят данные",
+      "Аккаунты",
+      "Темы контента",
+      "Тональность",
+      "Платформы",
+      "Приёмы подачи"
+    ],
+    "tableRows": 9,
+    "chartCount": 1,
+    "statValues": [
+      "7 181 153",
+      "6,8%",
+      "274 634",
+      "1 364 399",
+      "1,9 млн",
+      "5,6%"
+    ],
+    "insightTitles": [
+      "Охват вырос на 35,5%",
+      "Один ролик собрал 2 560 708 просмотров",
+      "Короткие ролики вовлекают сильнее",
+      "Самый слабый ролик собрал 11 936 просмотров"
+    ],
+    "hasNaN": false,
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "scrollHeight": 5266
+  },
+  {
+    "file": "docs/screenshots/after-accounts-desktop.png",
+    "bytes": 165692,
+    "title": "Аккаунты — Creator Analytics",
+    "h1": "Аккаунты",
+    "h2": [
+      "Добавить аккаунт"
+    ],
+    "tableRows": 0,
+    "chartCount": 0,
+    "statValues": [],
+    "insightTitles": [],
+    "hasNaN": false,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "scrollHeight": 900
+  },
+  {
+    "file": "docs/screenshots/after-account-desktop.png",
+    "bytes": 974010,
+    "title": "Маша ест — Creator Analytics",
+    "h1": "Маша ест",
+    "h2": [
+      "Просмотры по неделям",
+      "Все ролики",
+      "Выводы",
+      "История синхронизаций",
+      "Темы контента",
+      "Приёмы подачи",
+      "Лучшие часы",
+      "Дни недели"
+    ],
+    "tableRows": 34,
+    "chartCount": 3,
+    "statValues": [
+      "1 008 953",
+      "6,3%",
+      "22,8%",
+      "42 040",
+      "раз в 4.0 дн."
+    ],
+    "insightTitles": [
+      "Охват упал на 72,2%",
+      "Вовлечённость выше ориентира: 6,3%",
+      "Один ролик собрал 209 105 просмотров",
+      "Ритм публикаций: раз в 4.0 дн."
+    ],
+    "hasNaN": false,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "scrollHeight": 4700
+  },
+  {
+    "file": "docs/screenshots/after-videos-desktop.png",
+    "bytes": 1436262,
+    "title": "Ролики — Creator Analytics",
+    "h1": "Ролики",
+    "h2": [
+      "Добавить аккаунт"
+    ],
+    "tableRows": 66,
+    "chartCount": 0,
+    "statValues": [],
+    "insightTitles": [],
+    "hasNaN": false,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "scrollHeight": 4668
+  },
+  {
+    "file": "docs/screenshots/after-video-desktop.png",
+    "bytes": 265106,
+    "title": "Смотри до конца, если хочешь результат — Ужин за 20 минут из того, что есть в холодильнике — Creator Analytics",
+    "h1": "Смотри до конца, если хочешь результат — Ужин за 20 минут из того, что есть в холодильнике",
+    "h2": [
+      "Текст ролика",
+      "Приёмы в этом ролике",
+      "Что можно сделать",
+      "Другие ролики аккаунта",
+      "Добавить аккаунт"
+    ],
+    "tableRows": 0,
+    "chartCount": 0,
+    "statValues": [
+      "4,9%",
+      "0.65×",
+      "20 из 24"
+    ],
+    "insightTitles": [
+      "Вовлечённость на уровне или выше среднего"
+    ],
+    "hasNaN": false,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "scrollHeight": 962
+  },
+  {
+    "file": "docs/screenshots/after-help-desktop.png",
+    "bytes": 509735,
+    "title": "Как это работает — Creator Analytics",
+    "h1": "Как это работает",
+    "h2": [
+      "Что делает сервис",
+      "Откуда данные",
+      "Ограничения, о которых важно знать",
+      "Как считаются метрики",
+      "Приватность",
+      "Текущее состояние",
+      "Добавить аккаунт"
+    ],
+    "tableRows": 0,
+    "chartCount": 0,
+    "statValues": [],
+    "insightTitles": [],
+    "hasNaN": false,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "scrollHeight": 2080
+  },
+  {
+    "file": "docs/screenshots/after-dashboard-empty.png",
+    "bytes": 145744,
+    "title": "Обзор — Creator Analytics",
+    "h1": "Аналитика контента креаторов",
+    "h2": [
+      "Добавить аккаунт"
+    ],
+    "tableRows": 0,
+    "chartCount": 0,
+    "statValues": [],
+    "insightTitles": [],
+    "hasNaN": false,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "scrollHeight": 900
+  }
+]
