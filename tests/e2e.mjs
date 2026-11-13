@@ -84,7 +84,7 @@ async function main() {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
-    for (const [label, heading] of [['Аккаунты', 'Аккаунты'], ['Ролики', 'Ролики'], ['Как это работает', 'Как это работает'], ['Обзор', 'Обзор']]) {
+    for (const [label, heading] of [['Аккаунты', 'Аккаунты'], ['Сравнение', 'Сравнение'], ['Ролики', 'Ролики'], ['Как это работает', 'Как это работает'], ['Обзор', 'Обзор']]) {
       await page.click(`.nav__link:text-is("${label}")`);
       await page.waitForLoadState('networkidle');
       assert.equal(await page.locator('h1').innerText(), heading, `раздел ${label}`);
@@ -186,6 +186,33 @@ async function main() {
     const rows = await page.locator('table.data tbody tr').count();
     assert.ok(rows > 0, 'таблица роликов пуста без JS');
     await context.close();
+  });
+
+  await scenario('сравнение работает без JavaScript: чипы-ссылки меняют выбор', async () => {
+    // Выбор аккаунтов сделан ссылками, а не JS-обработчиками: страница должна
+    // оставаться рабочей при отключённом скрипте, иначе сравнение превращается
+    // в статичную картинку.
+    const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${BASE}/compare`, { waitUntil: 'domcontentloaded' });
+    assert.equal(await page.locator('h1').innerText(), 'Сравнение');
+    assert.match(await page.locator('body').innerText(), /Аккаунты не выбраны/);
+
+    await page.click('.chip');
+    await page.waitForLoadState('domcontentloaded');
+    assert.match(page.url(), /accounts=\d+/);
+    // После выбора появляется таблица метрик и лидер по росту.
+    assert.match(await page.locator('body').innerText(), /Метрики за период/);
+    assert.ok(await page.locator('.chart-legend__item').count() >= 1, 'нет легенды графика');
+    await context.close();
+  });
+
+  await scenario('сравнение переживает мусорные даты объяснением, а не падением', async () => {
+    const page = await browser.newPage();
+    const response = await page.goto(`${BASE}/compare?accounts=1,2&from=2026-13-45`);
+    assert.equal(response.status(), 422);
+    assert.match(await page.locator('body').innerText(), /не удалось разобрать/);
+    await page.close();
   });
 
   await scenario('страница 404 объясняет, что произошло', async () => {

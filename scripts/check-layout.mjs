@@ -59,7 +59,9 @@ const VIEWPORTS = [
   { name: 'wide', width: 1920, height: 1080 },
 ];
 
-const PATHS = ['/', '/accounts', '/videos', '/help'];
+// `/compare?accounts=1,2` — страница сравнения с реальным выбором: пустое
+// состояние проверяет только его само, а таблицу и легенду надо увидеть.
+const PATHS = ['/', '/accounts', '/compare?accounts=1,2', '/videos', '/help'];
 
 function luminance([r, g, b]) {
   const channel = (c) => {
@@ -122,6 +124,9 @@ for (const viewport of VIEWPORTS) {
         return r.height < 24 || r.width < 24;
       }).map((el) => `${el.tagName}.${el.className}:${Math.round(el.getBoundingClientRect().width)}x${Math.round(el.getBoundingClientRect().height)}`);
       const unlabeled = [...document.querySelectorAll('input, select, textarea')].filter((el) => {
+        // Скрытые поля не попадают в дерево доступности: метка им не нужна,
+        // и требовать её — ложное срабатывание, а не найденная проблема.
+        if (el.type === 'hidden') return false;
         const id = el.id;
         const hasLabel = id && document.querySelector(`label[for="${id}"]`);
         const aria = el.getAttribute('aria-label') || el.getAttribute('aria-labelledby');

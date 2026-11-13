@@ -313,3 +313,100 @@ function round(n) {
 }
 
 export { round };
+
+// Палитра и штрихи для многорядового графика. Различие только цветом
+// отсекает дальтоников (≈8 % мужчин), поэтому каждая линия получает ещё
+// свой штрих и свою форму маркера.
+export const SERIES_STYLES = [
+  { color: '#7c9cff', dash: '', marker: 'circle', label: 'линия' },
+  { color: '#ffb35c', dash: '6 4', marker: 'square', label: 'штрих' },
+  { color: '#5ed3a8', dash: '2 3', marker: 'triangle', label: 'точки' },
+  { color: '#ff7c9c', dash: '10 4 2 4', marker: 'diamond', label: 'штрих-точка' },
+];
+
+function markerShape(style, x, y) {
+  const size = 3.4;
+  if (style.marker === 'square') {
+    return html`<rect class="chart__dot" x="${round(x - size)}" y="${round(y - size)}" width="${round(size * 2)}" height="${round(size * 2)}"></rect>`;
+  }
+  if (style.marker === 'triangle') {
+    return html`<polygon class="chart__dot" points="${round(x)},${round(y - size * 1.3)} ${round(x + size * 1.2)},${round(y + size)} ${round(x - size * 1.2)},${round(y + size)}"></polygon>`;
+  }
+  if (style.marker === 'diamond') {
+    return html`<polygon class="chart__dot" points="${round(x)},${round(y - size * 1.35)} ${round(x + size * 1.35)},${round(y)} ${round(x)},${round(y + size * 1.35)} ${round(x - size * 1.35)},${round(y)}"></polygon>`;
+  }
+  return html`<circle class="chart__dot" cx="${round(x)}" cy="${round(y)}" r="${size}"></circle>`;
+}
+
+/**
+ * Несколько рядов на одном графике.
+ *
+ * `series` — массив `{ key, label, rows }`, где `rows` уже выровнены по общим
+ * `keys` (значение `null` — пропуск, а не ноль: ноль соврал бы о провале).
+ * Ось считается по максимуму всех рядов, иначе ряды несравнимы визуально.
+ */
+export function multiLineChart(series, {
+  keys, width = 720, height = 260, valueKey = 'views',
+  labelFormatter = formatShortDate, ariaLabel = 'Сравнение рядов', unit = '',
+} = {}) {
+  const withData = series.filter((s) => s.rows.some((r) => r && Number.isFinite(Number(r[valueKey]))));
+  if (!keys?.length || !withData.length) {
+    return html`<p class="card__hint">Нет данных за выбранный период</p>`;
+  }
+  const pad = { top: 16, right: 12, bottom: 28, left: 52 };
+  const innerW = width - pad.left - pad.right;
+  const innerH = height - pad.top - pad.bottom;
+  const allValues = withData.flatMap((s) => s.rows.map((r) => Number(r?.[valueKey])))
+    .filter((v) => Number.isFinite(v));
+  const niceMax = niceCeil(Math.max(...allValues, 1));
+  const stepX = keys.length > 1 ? innerW / (keys.length - 1) : 0;
+  const x = (i) => pad.left + i * stepX;
+  const y = (v) => pad.top + innerH - (v / niceMax) * innerH;
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => niceMax * t);
+  const labelEvery = Math.max(1, Math.ceil(keys.length / 7));
+
+  return html`
+    <div class="chart-legend">
+      ${withData.map((s, i) => {
+        const style = SERIES_STYLES[i % SERIES_STYLES.length];
+        return html`<span class="chart-legend__item">
+          <svg class="chart-legend__swatch" width="26" height="10" aria-hidden="true">
+            <line x1="0" y1="5" x2="26" y2="5" stroke="${style.color}" stroke-width="2.5" stroke-dasharray="${style.dash || 'none'}"></line>
+          </svg>
+          <span>${s.label}</span>
+        </span>`;
+      })}
+    </div>
+    <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}">
+      ${ticks.map((tick) => html`
+        <line class="chart__grid" x1="${pad.left}" x2="${width - pad.right}" y1="${round(y(tick))}" y2="${round(y(tick))}"></line>
+        <text class="chart__axis" x="${pad.left - 8}" y="${round(y(tick) + 4)}" text-anchor="end">${formatNumber(tick, { compact: true })}</text>
+      `)}
+      ${withData.map((s, i) => {
+        const style = SERIES_STYLES[i % SERIES_STYLES.length];
+        // Разрыв в данных рвёт линию, а не соединяет через пустоту.
+        const segments = [];
+        let current = [];
+        s.rows.forEach((row, index) => {
+          const value = Number(row?.[valueKey]);
+          if (row && Number.isFinite(value)) current.push(`${round(x(index))},${round(y(value))}`);
+          else if (current.length) { segments.push(current); current = []; }
+        });
+        if (current.length) segments.push(current);
+        return html`
+          ${segments.map((seg) => (seg.length > 1
+            ? html`<path class="chart__line" d="M${seg.join(' L')}" stroke="${style.color}" stroke-dasharray="${style.dash || 'none'}" fill="none" stroke-width="2.5"></path>`
+            : ''))}
+          ${s.rows.map((row, index) => {
+            const value = Number(row?.[valueKey]);
+            if (!row || !Number.isFinite(value)) return '';
+            return html`${markerShape(style, x(index), y(value))}`;
+          })}
+        `;
+      })}
+      ${keys.map((key, i) => (i % labelEvery === 0 || i === keys.length - 1
+        ? html`<text class="chart__axis" x="${round(x(i))}" y="${height - 8}" text-anchor="middle">${labelFormatter(key)}</text>`
+        : ''))}
+    </svg>
+    ${unit ? html`<p class="card__hint">${unit}</p>` : ''}`;
+}

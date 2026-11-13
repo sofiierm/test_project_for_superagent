@@ -2,8 +2,8 @@
 import { html } from './html.mjs';
 import { layout } from './layout.mjs';
 import {
-  columnsChart, deltaBadge, emptyState, hookTable, insightList, lineChart, notice,
-  platformBadge, sentimentBar, statCard, syncScheduleLabel, topicsList, videosTable,
+  columnsChart, deltaBadge, emptyState, hookTable, insightList, lineChart, multiLineChart,
+  notice, platformBadge, sentimentBar, statCard, syncScheduleLabel, topicsList, videosTable,
   PLATFORM_LABELS,
 } from './components.mjs';
 import {
@@ -655,3 +655,171 @@ export function notFoundPage({ mode, providerReason }) {
 }
 
 export { weekdayIndex };
+
+/**
+ * Сравнение аккаунтов и периодов (#9).
+ *
+ * Форма — обычный GET: выбор попадает в URL, ссылку можно переслать, а
+ * страница работает без JavaScript. Строка «кто быстрее растёт» стоит выше
+ * таблицы, потому что это и есть ответ на вопрос пользователя.
+ */
+export function comparePage(data, { mode, providerReason }) {
+  const { accounts, selected, period, comparison, growth, series, keys, bucket, error } = data;
+  const selectedIds = new Set(selected.map((a) => a.id));
+
+  const formatDay = (iso) => formatShortDate(iso);
+  const deltaText = (value, suffix = '%') => {
+    if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+    const rounded = Math.round(value * 10) / 10;
+    return `${rounded > 0 ? '+' : ''}${formatPercent(rounded)}${suffix === '%' ? '' : suffix}`;
+  };
+
+  // «Кто растёт быстрее» — по изменению просмотров; при отсутствии сравнения
+  // честно говорим, что сравнивать не с чем.
+  const withGrowth = growth.filter((g) => g.hasComparison && g.viewsChange !== null);
+  const fastest = withGrowth.length
+    ? withGrowth.reduce((a, b) => (b.viewsChange > a.viewsChange ? b : a))
+    : null;
+
+  const toggleHref = (account) => {
+    const next = new Set(selectedIds);
+    if (next.has(account.id)) next.delete(account.id); else next.add(account.id);
+    const params = new URLSearchParams();
+    if (next.size) params.set('accounts', [...next].join(','));
+    if (period) { params.set('from', period.fromInput); params.set('to', period.toInput); }
+    const qs = params.toString();
+    return qs ? `/compare?${qs}` : '/compare';
+  };
+
+  return layout({
+    title: 'Сравнение',
+    active: 'compare',
+    mode,
+    providerReason,
+    body: html`
+      <div class="page-head">
+        <div class="page-head__titles">
+          <h1>Сравнение</h1>
+          <p class="page-head__lead">Выберите 2–4 аккаунта и период: метрики в одной таблице, ряды на одном графике, динамика к предыдущему периоду той же длины.</p>
+        </div>
+      </div>
+
+      ${error ? notice(error, 'error') : ''}
+
+      <form class="card" method="get" action="/compare">
+        <div class="compare-form">
+          <div class="field">
+            <label class="field__label" for="compare-from">С периода</label>
+            <input class="input" id="compare-from" name="from" type="date" value="${period?.fromInput ?? ''}">
+          </div>
+          <div class="field">
+            <label class="field__label" for="compare-to">По</label>
+            <input class="input" id="compare-to" name="to" type="date" value="${period?.toInput ?? ''}">
+          </div>
+          <input type="hidden" name="accounts" value="${[...selectedIds].join(',')}">
+          <button class="btn btn--primary" type="submit">Показать</button>
+        </div>
+        <fieldset class="compare-picker">
+          <legend class="field__label">Аккаунты</legend>
+          <div class="row row--wrap">
+            ${accounts.map((account) => html`
+              <a class="chip ${selectedIds.has(account.id) ? 'chip--on' : ''}" href="${toggleHref(account)}"
+                 aria-pressed="${selectedIds.has(account.id) ? 'true' : 'false'}">
+                ${account.displayName || `@${account.handle}`}
+              </a>`)}
+          </div>
+          <p class="card__hint">Выбор сохраняется в ссылке — её можно передать коллеге.</p>
+        </fieldset>
+      </form>
+
+      ${!selected.length
+        ? html`<div class="card">${emptyState({
+            title: 'Аккаунты не выбраны',
+            text: 'Отметьте два-четыре аккаунта выше, чтобы увидеть их метрики рядом. Сравнивать имеет смысл аккаунты на одной платформе или с похожей аудиторией.',
+            action: html`<a class="btn btn--primary" href="/compare?accounts=${accounts.slice(0, 2).map((a) => a.id).join(',')}">Сравнить первые два</a>`,
+          })}</div>`
+        : html`
+          ${fastest
+            ? html`<div class="card card--accent">
+                <p class="card__title">Быстрее всех растёт ${fastest.account.displayName || `@${fastest.account.handle}`}</p>
+                <p class="card__hint">
+                  Просмотры ${deltaText(fastest.viewsChange)} к предыдущему периоду
+                  (${formatDay(period.previous.from)} — ${formatDay(period.previous.to)}).
+                  ${withGrowth.length < growth.length
+                    ? 'У части аккаунтов в прошлом периоде не было публикаций — для них изменения не считаются.'
+                    : ''}
+                </p>
+              </div>`
+            : html`<div class="card">
+                <p class="card__title">Динамику показать не с чем</p>
+                <p class="card__hint">Ни у одного выбранного аккаунта не было публикаций в предыдущем периоде
+                  (${formatDay(period.previous.from)} — ${formatDay(period.previous.to)}), поэтому изменения не рассчитаны:
+                  «ноль процентов» соврал бы.</p>
+              </div>`}
+
+          <div class="card">
+            <p class="card__title">Метрики за период ${formatDay(period.from)} — ${formatDay(period.to)} (${period.days} ${plural(period.days, 'день', 'дня', 'дней')})</p>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Аккаунт</th>
+                    <th class="num">Ролики</th>
+                    <th class="num">Просмотры</th>
+                    <th class="num">Медиана просмотров</th>
+                    <th class="num">ER</th>
+                    <th class="num">Охват к подписчикам</th>
+                    <th class="num">Роликов в неделю</th>
+                    <th class="num">Просмотры к прошлому</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${comparison.rows.map((row) => {
+                    const g = growth.find((item) => item.account.id === row.account.id);
+                    const lead = comparison.leaders;
+                    return html`
+                      <tr>
+                        <td>
+                          <div class="cell-title">
+                            <a class="cell-title__main" href="/accounts/${row.account.id}">${row.account.displayName || `@${row.account.handle}`}</a>
+                            <span class="cell-title__sub">${PLATFORM_LABELS[row.account.platform] ?? row.account.platform} · ${formatNumber(row.account.followers)} подписчиков</span>
+                          </div>
+                        </td>
+                        <td class="num">${row.videos}${row.hasData ? '' : html`<span class="cell-title__sub"> нет публикаций</span>`}</td>
+                        <td class="num">${lead.views === row.account.id ? html`<strong>${formatNumber(row.totalViews)}</strong>` : formatNumber(row.totalViews)}</td>
+                        <td class="num">${formatNumber(row.medianViews)}</td>
+                        <td class="num">${lead.er === row.account.id ? html`<strong>${formatPercent(row.avgEr)}</strong>` : formatPercent(row.avgEr)}</td>
+                        <td class="num">${formatPercent(row.avgFollowerReach)}</td>
+                        <td class="num">${row.videosPerWeek.toFixed(1)}</td>
+                        <td class="num">${g ? deltaText(g.viewsChange) : '—'}</td>
+                      </tr>`;
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p class="card__hint">Жирным — лидер по метрике среди аккаунтов с публикациями в периоде. ER считается по охвату: вовлечённость / просмотры.</p>
+          </div>
+
+          <div class="card">
+            <p class="card__title">Просмотры по ${bucket === 'day' ? 'дням' : 'неделям'}</p>
+            ${multiLineChart(series, {
+              keys,
+              valueKey: 'views',
+              labelFormatter: formatShortDate,
+              ariaLabel: 'Просмотры выбранных аккаунтов по периодам',
+              unit: 'Линии различаются не только цветом, но и штрихом и формой маркера.',
+            })}
+          </div>
+
+          <div class="card">
+            <p class="card__title">Вовлечённость и ритм</p>
+            <p class="card__hint">«Роликов в неделю» показывает темп публикаций: падение охвата при высоком темпе — повод проверить качество, а не наращивать объём.</p>
+            ${columnsChart(
+              comparison.rows.map((row) => ({ key: row.account.displayName || `@${row.account.handle}`, avgEr: row.avgEr })),
+              { valueKey: 'avgEr', labelKey: 'key', labelFormatter: String, width: 720, height: 180 },
+            )}
+          </div>`
+      }
+    `,
+  });
+}
