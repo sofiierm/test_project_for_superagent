@@ -13,6 +13,8 @@ import { recordSnapshot, upsertVideo } from '../db/videos.mjs';
 import { finishRun, startRun } from '../db/runs.mjs';
 import { nowIso } from '../lib/dates.mjs';
 import { parseAccountInput } from '../lib/account-url.mjs';
+import { intervalFor, nextRunAfterFailure, nextRunAfterSuccess } from '../lib/schedule.mjs';
+import { clearInFlight, isSyncInFlight, markInFlight } from '../lib/sync-lock.mjs';
 
 let cachedProbe = null;
 
@@ -122,7 +124,19 @@ export async function addAccount(input, { platformHint, notes = '', db = getDb()
     videosNew: created,
     message: warning,
   }, db);
-  setSyncState(account.id, { status: 'success', error: '', syncedAt: nowIso() }, db);
+  setSyncState(account.id, {
+    status: 'success',
+    error: '',
+    syncedAt: nowIso(),
+    attempts: 0,
+    errorCode: '',
+    // Новый аккаунт сразу попадает в расписание: иначе фоновая синхронизация
+    // не подхватит его до перезапуска сервиса.
+    nextSyncAt: nextRunAfterSuccess({
+      intervalMinutes: intervalFor(account, config.syncIntervalMinutes),
+      random: Math.random,
+    }),
+  }, db);
 
   return {
     account: getAccount(account.id, db),
@@ -135,15 +149,40 @@ export async function addAccount(input, { platformHint, notes = '', db = getDb()
 
 /**
  * Повторная синхронизация существующего аккаунта.
+ *
+ * Один аккаунт не синхронизируется дважды одновременно: если снаружи уже
+ * идёт запуск, возвращаем статус `busy`, а не начинаем второй. Это нужно и
+ * планировщику, и ручной кнопке — иначе два похода в платформу приходят
+ * одновременно, а второй запуск затирает состояние первого.
  */
-export async function syncAccount(accountId, { db = getDb() } = {}) {
+export async function syncAccount(accountId, { db = getDb(), force = false } = {}) {
   const account = getAccount(accountId, db);
   if (!account) {
     const error = new Error('Аккаунт не найден.');
     error.code = 'not_found';
     throw error;
   }
+  if (!force && isSyncInFlight(account.id)) {
+    return {
+      account,
+      provider: account.source,
+      status: 'busy',
+      videosFound: 0,
+      videosNew: 0,
+      warning: '',
+      error: 'Синхронизация этого аккаунта уже идёт.',
+    };
+  }
 
+  markInFlight(account.id);
+  try {
+    return await performSync(account, { db });
+  } finally {
+    clearInFlight(account.id);
+  }
+}
+
+async function performSync(account, { db }) {
   const provider = await resolveProvider();
   const effective = account.source === 'demo' ? 'demo' : provider.name;
   setSyncState(account.id, { status: 'running' }, db);
@@ -152,6 +191,7 @@ export async function syncAccount(accountId, { db = getDb() } = {}) {
   let videos = [];
   let warning = '';
   let status = 'success';
+  let errorCode = '';
 
   if (effective === 'ytdlp') {
     try {
@@ -167,10 +207,31 @@ export async function syncAccount(accountId, { db = getDb() } = {}) {
       }, db);
     } catch (error) {
       status = 'error';
+      errorCode = error.code || 'provider_error';
       warning = error.hint ? `${error.message} ${error.hint}` : error.message;
       finishRun(runId, { status, message: warning }, db);
-      setSyncState(account.id, { status: 'error', error: warning }, db);
-      return { account: getAccount(account.id, db), status, error: warning, videosFound: 0, videosNew: 0 };
+      setSyncState(account.id, {
+        status: 'error',
+        error: warning,
+        attempts: Number(account.syncAttempts) + 1,
+        errorCode,
+        nextSyncAt: nextRunAfterFailure({
+          attempts: Number(account.syncAttempts) + 1,
+          errorCode,
+          baseMinutes: config.syncBackoffMinutes,
+          maxMinutes: config.syncBackoffMaxMinutes,
+          jitter: 0.1,
+        }),
+      }, db);
+      return {
+        account: getAccount(account.id, db),
+        status,
+        errorCode,
+        error: warning,
+        videosFound: 0,
+        videosNew: 0,
+        warning,
+      };
     }
   } else {
     videos = demoVideos(account.platform, account.handle, { limit: config.syncLimit });
@@ -187,11 +248,21 @@ export async function syncAccount(accountId, { db = getDb() } = {}) {
   }
 
   finishRun(runId, { status, videosFound: videos.length, videosNew: created, message: warning }, db);
-  setSyncState(account.id, { status: 'success', error: '', syncedAt: nowIso() }, db);
+  setSyncState(account.id, {
+    status: 'success',
+    error: '',
+    syncedAt: nowIso(),
+    attempts: 0,
+    errorCode: '',
+    nextSyncAt: nextRunAfterSuccess({
+      intervalMinutes: intervalFor(account, config.syncIntervalMinutes),
+    }),
+  }, db);
   return {
     account: getAccount(account.id, db),
     provider: effective,
     status,
+    errorCode,
     videosFound: videos.length,
     videosNew: created,
     warning,

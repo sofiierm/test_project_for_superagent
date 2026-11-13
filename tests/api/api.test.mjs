@@ -18,7 +18,7 @@ const { createServer } = await import('../../src/server.mjs');
 const { getDb } = await import('../../src/db/index.mjs');
 const { closeDb } = await import('../../src/db/index.mjs');
 const { seedDemoData } = await import('../../src/services/seed.mjs');
-const { listAccounts } = await import('../../src/db/accounts.mjs');
+const { listAccounts, getAccount } = await import('../../src/db/accounts.mjs');
 const { listVideos } = await import('../../src/db/videos.mjs');
 
 getDb();
@@ -149,6 +149,31 @@ test('синхронизация идемпотентна: повторный з
   assert.equal(listVideos({ accountId: account.id }).length, before);
 });
 
+test('одновременная синхронизация того же аккаунта получает 409, а не второй запуск', async () => {
+  const account = listAccounts()[0];
+  const lock = await import('../../src/lib/sync-lock.mjs');
+  lock.markInFlight(account.id);
+  try {
+    const response = await request(`/api/accounts/${account.id}/sync`, { method: 'POST' });
+    assert.equal(response.status, 409);
+    const payload = await response.json();
+    assert.equal(payload.status, 'busy');
+    assert.match(payload.error, /уже идёт/);
+  } finally {
+    lock.clearInFlight(account.id);
+  }
+});
+
+test('синхронизация возвращает расписание следующего запуска', async () => {
+  const account = listAccounts()[0];
+  const response = await request(`/api/accounts/${account.id}/sync`, { method: 'POST' });
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.ok(payload.nextSyncAt, 'нет nextSyncAt в ответе');
+  assert.ok(new Date(payload.nextSyncAt) > new Date(), 'следующий запуск не в будущем');
+  assert.equal(getAccount(account.id).nextSyncAt, payload.nextSyncAt);
+});
+
 test('синхронизация несуществующего аккаунта даёт 404', async () => {
   const response = await request('/api/accounts/99999/sync', { method: 'POST' });
   assert.equal(response.status, 404);
@@ -200,6 +225,62 @@ test('API видео фильтрует по платформе', async () => {
   const { videos } = await response.json();
   assert.ok(videos.length > 0);
   for (const video of videos) assert.equal(video.platform, 'youtube');
+});
+
+test('нечисловой account в /api/videos — 422, а не все ролики', async () => {
+  // Раньше Number('abc') давал NaN, фильтр молча исчезал, и клиент получал
+  // ролики всех аккаунтов — правдоподобный, но чужой ответ.
+  const response = await request('/api/videos?account=abc');
+  assert.equal(response.status, 422);
+  const payload = await response.json();
+  assert.match(payload.error, /числовым id/);
+  assert.equal(payload.videos, undefined, 'вместо ошибки пришли данные');
+});
+
+test('неизвестный account в /api/videos — 404, а не пустой список', async () => {
+  const response = await request('/api/videos?account=99999');
+  assert.equal(response.status, 404);
+  assert.match((await response.json()).error, /не найден/i);
+});
+
+test('фильтр по account отдаёт только ролики этого аккаунта', async () => {
+  const accounts = listAccounts();
+  const response = await request(`/api/videos?account=${accounts[0].id}`);
+  assert.equal(response.status, 200);
+  const { videos } = await response.json();
+  assert.ok(videos.length > 0);
+  assert.deepEqual([...new Set(videos.map((v) => v.accountId))], [accounts[0].id]);
+});
+
+test('неизвестная платформа в /api/videos — 422 со списком допустимых', async () => {
+  const response = await request('/api/videos?platform=myspace');
+  assert.equal(response.status, 422);
+  const payload = await response.json();
+  assert.match(payload.hint, /instagram/);
+  assert.match(payload.hint, /youtube/);
+  assert.match(payload.hint, /tiktok/);
+});
+
+test('CSV с нечисловым account не отдаёт чужие данные', async () => {
+  const response = await request('/api/videos.csv?account=abc');
+  assert.equal(response.status, 422);
+  assert.doesNotMatch(await response.text(), /platform;handle/, 'вместо ошибки пришёл CSV');
+});
+
+test('вовлечённость аккаунта включает сохранения и сходится с роликами', async () => {
+  // ТЗ §5: вовлечённость = лайки + комментарии + репосты + сохранения.
+  // Агрегат по аккаунту однажды потерял сохранения, и ER аккаунта разошёлся
+  // с ER его же роликов.
+  const account = listAccounts()[0];
+  const videosResponse = await request(`/api/videos?account=${account.id}`);
+  const { videos } = await videosResponse.json();
+  const engagement = videos.reduce(
+    (sum, v) => sum + v.likes + v.comments + v.shares + v.saves, 0,
+  );
+  const accountsResponse = await request('/api/accounts');
+  const fromApi = (await accountsResponse.json()).accounts.find((a) => a.id === account.id);
+  assert.equal(fromApi.totalEngagements, engagement);
+  assert.ok(videos.some((v) => v.saves > 0), 'в демо-данных нет сохранений — проверка ничего не значит');
 });
 
 test('некорректный JSON в теле возвращает 400, а не падает', async () => {

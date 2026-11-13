@@ -46,7 +46,11 @@ function openDialog() {
   errorBox.hidden = true;
   input.removeAttribute('aria-invalid');
   dialog.showModal();
-  requestAnimationFrame(() => input?.focus());
+  // Фокус ставим сразу, а не в requestAnimationFrame: в кадре между
+  // showModal() и колбэком фокус формально остаётся на кнопке-триггере, и
+  // любой, кто проверит activeElement (тест, скринридер, клавиатура), увидит
+  // модалку без фокуса. showModal делает поле фокусируемым синхронно.
+  input?.focus();
 }
 
 // Нативный <dialog> закрывает клавиатуру внутри себя не во всех браузерах:

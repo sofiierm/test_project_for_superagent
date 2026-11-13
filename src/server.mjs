@@ -9,10 +9,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config } from './config.mjs';
 import { getDb } from './db/index.mjs';
-import { deleteAccount, getAccount, listAccounts } from './db/accounts.mjs';
+import {
+  deleteAccount, getAccount, isPlatform, listAccounts, platforms,
+} from './db/accounts.mjs';
 import { listVideos } from './db/videos.mjs';
 import { listRuns } from './db/runs.mjs';
 import { addAccount, resolveProvider, syncAccount } from './providers/index.mjs';
+import { isSyncInFlight } from './lib/sync-lock.mjs';
+import { startScheduler } from './services/scheduler.mjs';
 import { needsSeed, seedDemoData } from './services/seed.mjs';
 import {
   accountData, dashboardData, overviewStats, prepareVideos, videoData, videosToCsv,
@@ -121,6 +125,50 @@ function notFound(res, mode) {
  * Фабрика сервера. Отдельная функция нужна тестам: они поднимают сервер на
  * случайном порту и на изолированной базе.
  */
+/**
+ * Разбор фильтров `/api/videos` и `/api/videos.csv`.
+ *
+ * Раньше нечисловой `account` превращался в `NaN`, фильтр молча исчезал, и
+ * клиент получал ролики всех аккаунтов — правдоподобный, но чужой ответ.
+ * Теперь мусорный параметр — 422, а неизвестный id — 404: существование
+ * чужих аккаунтов не подтверждаем (пригодится для #7).
+ */
+function parseVideoFilter(url) {
+  const platform = url.searchParams.get('platform');
+  const rawAccount = url.searchParams.get('account');
+  const value = { platform: null, accountId: null };
+
+  if (platform) {
+    if (!isPlatform(platform)) {
+      return {
+        error: {
+          status: 422,
+          body: { error: `Неизвестная платформа «${platform}».`, hint: `Доступны: ${platforms.join(', ')}.` },
+        },
+      };
+    }
+    value.platform = platform.toLowerCase();
+  }
+
+  if (rawAccount) {
+    const id = Number(rawAccount);
+    if (!Number.isInteger(id) || id <= 0) {
+      return {
+        error: {
+          status: 422,
+          body: { error: `«account» должен быть числовым id, получено «${rawAccount}».` },
+        },
+      };
+    }
+    if (!getAccount(id)) {
+      return { error: { status: 404, body: { error: 'Аккаунт не найден.' } } };
+    }
+    value.accountId = id;
+  }
+
+  return { value, error: null };
+}
+
 export function createServer({ mode = 'demo', providerReason = '' } = {}) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -169,6 +217,15 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
       if (accountSync && req.method === 'POST') {
         const id = Number(accountSync[1]);
         if (!getAccount(id)) return sendJson(res, 404, { error: 'Аккаунт не найден.' });
+        // Второй параллельный запуск не начинаем: отвечаем 409 и говорим,
+        // что синхронизация уже идёт. 202 здесь соврал бы о результате.
+        if (isSyncInFlight(id)) {
+          return sendJson(res, 409, {
+            error: 'Синхронизация этого аккаунта уже идёт.',
+            status: 'busy',
+            retryAfter: 5,
+          });
+        }
         try {
           const result = await syncAccount(id);
           return sendJson(res, 200, {
@@ -178,6 +235,7 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
             videosNew: result.videosNew,
             warning: result.warning ?? '',
             error: result.error ?? '',
+            nextSyncAt: result.account?.nextSyncAt ?? null,
           });
         } catch (error) {
           return sendJson(res, 422, { error: error.message, hint: error.hint ?? '' });
@@ -214,20 +272,17 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
       }
 
       if (route === '/api/videos' && req.method === 'GET') {
-        const platform = url.searchParams.get('platform');
-        const accountId = url.searchParams.get('account');
+        const filter = parseVideoFilter(url);
+        if (filter.error) return sendJson(res, filter.error.status, filter.error.body);
         return sendJson(res, 200, {
-          videos: prepareVideos(listVideos({
-            platform: platform || null,
-            accountId: accountId ? Number(accountId) : null,
-            limit: 500,
-          })),
+          videos: prepareVideos(listVideos({ ...filter.value, limit: 500 })),
         });
       }
 
       if (route === '/api/videos.csv' && req.method === 'GET') {
-        const platform = url.searchParams.get('platform');
-        const csv = videosToCsv(prepareVideos(listVideos({ platform: platform || null, limit: 5000 })));
+        const filter = parseVideoFilter(url);
+        if (filter.error) return sendJson(res, filter.error.status, filter.error.body);
+        const csv = videosToCsv(prepareVideos(listVideos({ ...filter.value, limit: 5000 })));
         res.writeHead(200, {
           'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': 'attachment; filename="creator-analytics-videos.csv"',
@@ -317,5 +372,9 @@ export async function start() {
     server.once('error', reject);
     server.listen(config.port, config.host, resolve);
   });
-  return { server, provider };
+  // Фоновую синхронизацию выключаем вместе с сервером: иначе таймер держит
+  // процесс живым, и `npm start` не завершается по SIGTERM.
+  const stopScheduler = config.syncScheduler ? startScheduler() : () => {};
+  server.once('close', stopScheduler);
+  return { server, provider, stopScheduler };
 }

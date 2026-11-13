@@ -27,6 +27,12 @@ CREATE TABLE IF NOT EXISTS accounts (
   last_synced_at TEXT,
   sync_status   TEXT NOT NULL DEFAULT 'idle',
   sync_error    TEXT NOT NULL DEFAULT '',
+  -- Расписание фоновой синхронизации. NULL в sync_interval_minutes значит
+  -- «как у всех»: берётся глобальный SYNC_INTERVAL_MINUTES.
+  sync_interval_minutes INTEGER,
+  next_sync_at  TEXT,
+  sync_attempts INTEGER NOT NULL DEFAULT 0,
+  last_error_code TEXT NOT NULL DEFAULT '',
   UNIQUE (platform, handle)
 );
 
@@ -85,11 +91,29 @@ CREATE INDEX IF NOT EXISTS idx_sync_runs_account ON sync_runs(account_id, starte
 
 let instance = null;
 
+// Колонки, добавленные после первой версии схемы. `CREATE TABLE IF NOT EXISTS`
+// не меняет уже существующую таблицу, поэтому базу предыдущей версии нужно
+// догонять явно — иначе сервис падает на «no such column: next_sync_at».
+const ACCOUNT_MIGRATIONS = [
+  ['sync_interval_minutes', 'INTEGER'],
+  ['next_sync_at', 'TEXT'],
+  ['sync_attempts', 'INTEGER NOT NULL DEFAULT 0'],
+  ['last_error_code', "TEXT NOT NULL DEFAULT ''"],
+];
+
+function migrate(db) {
+  const columns = new Set(db.prepare('PRAGMA table_info(accounts)').all().map((row) => row.name));
+  for (const [name, definition] of ACCOUNT_MIGRATIONS) {
+    if (!columns.has(name)) db.exec(`ALTER TABLE accounts ADD COLUMN ${name} ${definition}`);
+  }
+}
+
 export function getDb(dbPath = config.dbPath) {
   if (instance) return instance;
   if (dbPath !== ':memory:') fs.mkdirSync(path.dirname(dbPath), { recursive: true });
   instance = new DatabaseSync(dbPath);
   instance.exec(SCHEMA);
+  migrate(instance);
   return instance;
 }
 

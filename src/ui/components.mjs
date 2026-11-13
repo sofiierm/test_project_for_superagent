@@ -1,8 +1,9 @@
 // Переиспользуемые фрагменты интерфейса: бейджи, метрики, графики, пустые состояния.
 import { html, raw } from './html.mjs';
 import {
-  formatNumber, formatPercent, formatShortDate, formatDuration, plural,
+  formatIn, formatNumber, formatPercent, formatShortDate, formatDuration, plural,
 } from '../lib/dates.mjs';
+import { delayReason } from '../lib/schedule.mjs';
 
 export const PLATFORM_LABELS = {
   instagram: 'Instagram',
@@ -285,6 +286,18 @@ export function sentimentBar(sentiment) {
 
 export function notice(text, kind = 'info') {
   return html`<div class="notice notice--${kind}"><span>${text}</span></div>`;
+}
+
+/**
+ * Строка «когда следующая синхронизация и почему отложена».
+ * Без `nextSyncAt` честно говорим, что расписание ещё не назначено.
+ */
+export function syncScheduleLabel(account, now = Date.now()) {
+  if (account.syncStatus === 'running') return 'синхронизация идёт';
+  if (!account.nextSyncAt) return 'следующая синхронизация не запланирована';
+  const reason = account.lastErrorCode ? delayReason(account.lastErrorCode) : '';
+  const when = `следующая синхронизация ${formatIn(account.nextSyncAt, now)}`;
+  return reason ? `${when} — ${reason}` : when;
 }
 
 function niceCeil(value) {

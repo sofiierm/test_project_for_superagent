@@ -63,6 +63,16 @@ export const config = {
   providerTimeoutMs: int(process.env.PROVIDER_TIMEOUT_MS, 60_000),
   // Разрешать произвольные адреса при добавлении аккаунта.
   allowArbitraryAccounts: bool(process.env.ALLOW_ANY_ACCOUNT, true),
+  // Фоновая синхронизация. Включена по умолчанию: без неё цифры стареют,
+  // пока пользователь не нажмёт кнопку. Отключается SYNC_SCHEDULER=false.
+  syncScheduler: bool(process.env.SYNC_SCHEDULER, true),
+  // Базовый интервал между синхронизациями одного аккаунта, минуты.
+  syncIntervalMinutes: Math.max(15, int(process.env.SYNC_INTERVAL_MINUTES, 180)),
+  // Как часто планировщик проверяет, кому пора синхронизироваться, мс.
+  syncTickMs: Math.max(1000, int(process.env.SYNC_TICK_MS, 60_000)),
+  // База экспоненциальной паузы после ошибки источника, минуты.
+  syncBackoffMinutes: Math.max(1, int(process.env.SYNC_BACKOFF_MINUTES, 15)),
+  syncBackoffMaxMinutes: Math.max(15, int(process.env.SYNC_BACKOFF_MAX_MINUTES, 12 * 60)),
   appName: 'Creator Analytics',
 };
 

@@ -23,6 +23,10 @@ export function mapAccount(row) {
     lastSyncedAt: row.last_synced_at,
     syncStatus: row.sync_status,
     syncError: row.sync_error,
+    syncIntervalMinutes: row.sync_interval_minutes ?? null,
+    nextSyncAt: row.next_sync_at ?? null,
+    syncAttempts: row.sync_attempts ?? 0,
+    lastErrorCode: row.last_error_code ?? '',
     videosCount: row.videos_count ?? 0,
     totalViews: row.total_views ?? 0,
     totalEngagements: row.total_engagements ?? 0,
@@ -35,7 +39,9 @@ export function listAccounts(db = getDb()) {
     SELECT a.*,
            (SELECT COUNT(*) FROM videos v WHERE v.account_id = a.id) AS videos_count,
            (SELECT COALESCE(SUM(v.views), 0) FROM videos v WHERE v.account_id = a.id) AS total_views,
-           (SELECT COALESCE(SUM(v.likes + v.comments + v.shares), 0) FROM videos v WHERE v.account_id = a.id) AS total_engagements,
+           -- Вовлечённость по определению ТЗ §5 включает сохранения.
+           -- Без них ER аккаунта расходился с ER его же роликов.
+           (SELECT COALESCE(SUM(v.likes + v.comments + v.shares + v.saves), 0) FROM videos v WHERE v.account_id = a.id) AS total_engagements,
            (SELECT MAX(v.published_at) FROM videos v WHERE v.account_id = a.id) AS last_published_at
     FROM accounts a
     ORDER BY a.platform, a.handle
@@ -97,14 +103,35 @@ export function updateAccount(id, patch, db = getDb()) {
   return getAccount(id, db);
 }
 
-export function setSyncState(id, { status, error = '', syncedAt }, db = getDb()) {
-  if (syncedAt) {
-    db.prepare('UPDATE accounts SET sync_status = ?, sync_error = ?, last_synced_at = ? WHERE id = ?')
-      .run(status, error, syncedAt, Number(id));
-  } else {
-    db.prepare('UPDATE accounts SET sync_status = ?, sync_error = ? WHERE id = ?')
-      .run(status, error, Number(id));
+export function setSyncState(id, {
+  status, error = '', syncedAt, nextSyncAt, attempts, errorCode,
+}, db = getDb()) {
+  const sets = ['sync_status = ?', 'sync_error = ?'];
+  const values = [status, error];
+  if (syncedAt) { sets.push('last_synced_at = ?'); values.push(syncedAt); }
+  if (nextSyncAt !== undefined) { sets.push('next_sync_at = ?'); values.push(nextSyncAt); }
+  if (attempts !== undefined) { sets.push('sync_attempts = ?'); values.push(Number(attempts) || 0); }
+  if (errorCode !== undefined) { sets.push('last_error_code = ?'); values.push(String(errorCode ?? '')); }
+  values.push(Number(id));
+  db.prepare(`UPDATE accounts SET ${sets.join(', ')} WHERE id = ?`).run(...values);
+  return getAccount(id, db);
+}
+
+/**
+ * Планирование следующего запуска без изменения статуса синхронизации.
+ * Используется, когда расписание меняют из интерфейса или при старте сервиса.
+ */
+export function scheduleNext(id, { nextSyncAt, intervalMinutes }, db = getDb()) {
+  const sets = [];
+  const values = [];
+  if (nextSyncAt !== undefined) { sets.push('next_sync_at = ?'); values.push(nextSyncAt); }
+  if (intervalMinutes !== undefined) {
+    sets.push('sync_interval_minutes = ?');
+    values.push(intervalMinutes === null ? null : Math.max(1, Number(intervalMinutes) || 1));
   }
+  if (!sets.length) return getAccount(id, db);
+  values.push(Number(id));
+  db.prepare(`UPDATE accounts SET ${sets.join(', ')} WHERE id = ?`).run(...values);
   return getAccount(id, db);
 }
 

@@ -7,6 +7,8 @@ import { recordSnapshot, upsertVideo } from '../db/videos.mjs';
 import { finishRun, startRun } from '../db/runs.mjs';
 import { demoProfile, demoVideos } from '../providers/demo-data.mjs';
 import { nowIso } from '../lib/dates.mjs';
+import { config } from '../config.mjs';
+import { intervalFor, nextRunAfterSuccess } from '../lib/schedule.mjs';
 
 export const DEMO_HANDLES = ['masha.eats', 'ProCoding', 'danceka'];
 const DEMO_PLATFORMS = { 'masha.eats': 'instagram', ProCoding: 'youtube', danceka: 'tiktok' };
@@ -28,7 +30,16 @@ export function seedDemoData({ handles = DEMO_HANDLES, db = getDb(), limit = 24 
       recordSnapshot(id, db);
     }
     finishRun(runId, { status: 'success', videosFound: videos.length, videosNew: videos.length }, db);
-    setSyncState(account.id, { status: 'success', error: '', syncedAt: nowIso() }, db);
+    setSyncState(account.id, {
+      status: 'success',
+      error: '',
+      syncedAt: nowIso(),
+      attempts: 0,
+      errorCode: '',
+      nextSyncAt: nextRunAfterSuccess({
+        intervalMinutes: intervalFor(account, config.syncIntervalMinutes),
+      }),
+    }, db);
     created.push(handle);
   }
   return created;
