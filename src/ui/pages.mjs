@@ -3,8 +3,8 @@ import { html } from './html.mjs';
 import { layout } from './layout.mjs';
 import {
   columnsChart, deltaBadge, emptyState, hookTable, insightList, lineChart, multiLineChart,
-  notice, platformBadge, sentimentBar, statCard, syncScheduleLabel, topicsList, videosTable,
-  PLATFORM_LABELS,
+  notice, platformBadge, reportHead, sentimentBar, statCard, syncScheduleLabel, topicsList,
+  videosTable, PLATFORM_LABELS,
 } from './components.mjs';
 import {
   formatDateTime, formatIn, formatNumber, formatPercent, formatShortDate, plural, weekdayIndex,
@@ -298,10 +298,19 @@ export function accountPage(data, { mode, providerReason }) {
         </div>
         <div class="page-head__actions">
           <a class="btn" href="/api/accounts/${account.id}/videos.csv">CSV</a>
+          <button class="btn" data-print-report>Скачать отчёт</button>
           <button class="btn" data-sync-account="${account.id}">Синхронизировать</button>
           <button class="btn btn--danger" data-delete-account="${account.id}" data-handle="${account.handle}">Удалить</button>
         </div>
       </div>
+
+      ${reportHead({
+        title: `Отчёт по аккаунту ${account.displayName || `@${account.handle}`}`,
+        meta: `@${account.handle} · ${PLATFORM_LABELS[account.platform] ?? account.platform} · `
+          + `${formatNumber(account.followers)} подписчиков · `
+          + `${videos.length} роликов · данные на ${formatDateTime(account.lastSyncedAt)}`,
+        demo: account.source === 'demo',
+      })}
 
       ${account.syncError ? notice(account.syncError, 'error') : ''}
       ${account.source === 'demo' ? notice('Это демонстрационные данные: цифры сгенерированы, чтобы показать работу анализа. Подключение живого источника описано в разделе «Как это работает».', 'warn') : ''}
@@ -702,7 +711,20 @@ export function comparePage(data, { mode, providerReason }) {
           <h1>Сравнение</h1>
           <p class="page-head__lead">Выберите 2–4 аккаунта и период: метрики в одной таблице, ряды на одном графике, динамика к предыдущему периоду той же длины.</p>
         </div>
+        ${selected.length && period
+          ? html`<div class="page-head__actions">
+              <button class="btn btn--primary" data-print-report>Скачать отчёт</button>
+            </div>`
+          : ''}
       </div>
+
+      ${selected.length && period
+        ? reportHead({
+            title: 'Сравнение аккаунтов',
+            meta: `${selected.map((a) => a.displayName || `@${a.handle}`).join(' · ')} · период ${formatDay(period.from)} — ${formatDay(period.to)} (${period.days} ${plural(period.days, 'день', 'дня', 'дней')})`,
+            demo: selected.some((a) => a.source === 'demo'),
+          })
+        : ''}
 
       ${error ? notice(error, 'error') : ''}
 

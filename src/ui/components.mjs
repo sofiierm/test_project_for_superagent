@@ -1,7 +1,7 @@
 // Переиспользуемые фрагменты интерфейса: бейджи, метрики, графики, пустые состояния.
 import { html, raw } from './html.mjs';
 import {
-  formatIn, formatNumber, formatPercent, formatShortDate, formatDuration, plural,
+  formatDateTime, formatIn, formatNumber, formatPercent, formatShortDate, formatDuration, plural,
 } from '../lib/dates.mjs';
 import { delayReason } from '../lib/schedule.mjs';
 
@@ -409,4 +409,24 @@ export function multiLineChart(series, {
         : ''))}
     </svg>
     ${unit ? html`<p class="card__hint">${unit}</p>` : ''}`;
+}
+
+/**
+ * Шапка отчёта (#10).
+ *
+ * На экране не видна: те же данные уже есть в заголовке страницы. Нужна при
+ * печати — лист без шапки невозможно опознать, когда он лежит на столе
+ * отдельно от сайта. Демо-данные помечаются явно: отчёт уходит клиенту, и
+ * выдать сгенерированные числа за статистику платформы нельзя.
+ */
+export function reportHead({ title, meta, demo = false }) {
+  return html`
+    <header class="report-head">
+      <p class="report-head__title">${title}</p>
+      <p class="report-head__meta">${meta}</p>
+      <p class="report-head__meta">Сформирован ${formatDateTime(new Date())}</p>
+      ${demo
+        ? html`<p class="report-head__meta"><strong>Внимание: данные демонстрационные.</strong> Цифры сгенерированы для показа работы анализа, это не статистика платформы.</p>`
+        : ''}
+    </header>`;
 }
