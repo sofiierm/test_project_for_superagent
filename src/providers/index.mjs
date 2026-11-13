@@ -1,12 +1,17 @@
 // Выбор источника данных и синхронизация аккаунта.
 //
 // Режимы:
-//  • demo  — детерминированные данные, работают всегда и без сети;
-//  • ytdlp — реальные публичные данные через yt-dlp;
-//  • auto  — ytdlp, если он установлен, иначе demo (с явным предупреждением).
+//  • demo     — детерминированные данные, работают всегда и без сети;
+//  • ytdlp    — реальные публичные данные через yt-dlp (разбор страниц);
+//  • official — официальные API платформ по ключу/токену (#8);
+//  • auto     — official, если настроен ключ; иначе ytdlp, если установлен;
+//               иначе demo (с явным предупреждением).
 import { config } from '../config.mjs';
 import { demoProfile, demoVideos } from './demo-data.mjs';
 import { ProviderError, fetchAccount as fetchLive, probeYtDlp } from './ytdlp.mjs';
+import {
+  OfficialApiError, SUPPORTED_PLATFORMS, fetchAccount as fetchOfficial, officialConfigured, probeOfficial,
+} from './official.mjs';
 import { getDb } from '../db/index.mjs';
 import { getAccount, insertAccount, setSyncState, updateAccount } from '../db/accounts.mjs';
 import { recordSnapshot, upsertVideo } from '../db/videos.mjs';
@@ -20,6 +25,25 @@ let cachedProbe = null;
 
 export async function resolveProvider({ refresh = false } = {}) {
   if (config.provider === 'demo') return { name: 'demo', version: null, reason: 'режим demo задан в конфигурации' };
+
+  if (config.provider === 'official') {
+    const probe = probeOfficial();
+    if (!probe.available) {
+      // Сервис должен подняться и объяснить проблему в интерфейсе, а не упасть
+      // на старте: иначе владелец видит трейс в консоли вместо страницы.
+      // Официальные данные при этом не подменяются демо-данными молча —
+      // добавление аккаунта вернёт понятную ошибку.
+      return {
+        name: 'official',
+        version: 'v3',
+        unavailable: true,
+        reason: probe.reason,
+        hint: 'Добавьте YOUTUBE_API_KEY или выберите PROVIDER=auto.',
+      };
+    }
+    return { name: 'official', version: 'v3', reason: probe.reason };
+  }
+
   if (config.provider === 'ytdlp') {
     const probe = await probeYtDlp();
     if (!probe.available) {
@@ -30,6 +54,11 @@ export async function resolveProvider({ refresh = false } = {}) {
       );
     }
     return { name: 'ytdlp', version: probe.version, reason: 'режим ytdlp задан в конфигурации' };
+  }
+  // auto: официальный API предпочтительнее разбора HTML — он стабильнее и
+  // не ломается от смены вёрстки. Но только если ключ действительно задан.
+  if (officialConfigured()) {
+    return { name: 'official', version: 'v3', reason: 'ключ YouTube Data API задан' };
   }
   if (!cachedProbe || refresh) cachedProbe = await probeYtDlp();
   if (cachedProbe.available) {
@@ -64,7 +93,37 @@ export async function addAccount(input, { platformHint, notes = '', ownerId = nu
   let source = 'demo';
   let warning = '';
 
-  if (provider.name === 'ytdlp') {
+  if (provider.name === 'official') {
+    if (!SUPPORTED_PLATFORMS.includes(parsed.platform)) {
+      // Платформа без официального API: не выдаём демо-данные за официальные.
+      const demo = demoProfile(parsed.platform, parsed.handle);
+      accountData = demo ?? {
+        platform: parsed.platform,
+        handle: parsed.handle,
+        displayName: parsed.handle,
+        url: parsed.url,
+        bio: '',
+        followers: 0,
+        following: 0,
+        postsCount: 0,
+        avatarUrl: '',
+      };
+      videos = demoVideos(parsed.platform, parsed.handle, { limit: config.syncLimit });
+      source = 'demo';
+      warning = `${probeOfficial(parsed.platform).reason} Показаны демонстрационные данные.`;
+    } else {
+      try {
+        const result = await fetchOfficial(parsed.platform, parsed.handle, { limit: config.syncLimit });
+        accountData = result.account;
+        videos = result.videos;
+        source = 'official';
+        warning = result.warnings.join(' ');
+      } catch (error) {
+        if (!(error instanceof OfficialApiError)) throw error;
+        throw error;
+      }
+    }
+  } else if (provider.name === 'ytdlp') {
     try {
       const result = await fetchLive(parsed.platform, parsed.handle, { limit: config.syncLimit });
       accountData = result.account;

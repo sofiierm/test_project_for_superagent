@@ -111,6 +111,21 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id, expires_at DESC);
+
+-- Токены официальных API (#8). Хранятся зашифрованными (AES-256-GCM): утечка
+-- базы не должна отдавать доступ к чужим аккаунтам платформ.
+CREATE TABLE IF NOT EXISTS platform_tokens (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id    INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  platform      TEXT NOT NULL,
+  access_token  TEXT NOT NULL,
+  refresh_token TEXT NOT NULL DEFAULT '',
+  expires_at    TEXT,
+  scope         TEXT NOT NULL DEFAULT '',
+  created_at    TEXT NOT NULL,
+  updated_at    TEXT NOT NULL,
+  UNIQUE (account_id)
+);
 `;
 
 let instance = null;
