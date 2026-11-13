@@ -84,6 +84,13 @@ export const config = {
   // Secure-флаг cookie: включать за HTTPS, иначе браузер не сохранит cookie
   // на http://localhost и вход будет «молча» не работать.
   cookieSecure: bool(process.env.COOKIE_SECURE, false),
+  // ---- Официальные API платформ (#8) ----
+  // Ключ YouTube Data API v3. Без него официальный провайдер выключен: сервис
+  // не притворяется, что умеет то, чего не может.
+  youtubeApiKey: process.env.YOUTUBE_API_KEY || '',
+  // Ключ шифрования токенов платформ. Если не задан, выводится из
+  // SESSION_SECRET: отдельная переменная не обязательна, но лучше её задать.
+  tokenSecret: process.env.TOKEN_SECRET || process.env.SESSION_SECRET || '',
   // ---- Семантический анализ (#11) ----
   // none | local | remote. По умолчанию none: словарный анализ работает офлайн
   // и ничего не отправляет наружу. local склеивает словоформы без сети,
