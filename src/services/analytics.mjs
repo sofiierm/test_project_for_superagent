@@ -27,11 +27,16 @@ export function prepareVideos(videos) {
   return videos.map(decorate);
 }
 
-export function dashboardData({ db = getDb(), platform = null, accountId = null } = {}) {
-  const accounts = listAccounts(db).filter((a) => (!platform || a.platform === platform)
+export function dashboardData({
+  db = getDb(), platform = null, accountId = null, ownerId,
+} = {}) {
+  const accounts = listAccounts(db, { ownerId }).filter((a) => (!platform || a.platform === platform)
     && (!accountId || a.id === Number(accountId)));
   const accountIds = new Set(accounts.map((a) => a.id));
-  const allVideos = prepareVideos(listVideos({ limit: 1000 }, db).filter((v) => accountIds.has(v.accountId)));
+  // Ролики ограничиваем теми же аккаунтами, что уже отфильтрованы по владельцу:
+  // иначе сводка считалась бы по чужим данным (#7).
+  const allVideos = prepareVideos(listVideos({ limit: 5000, ownerId }, db)
+    .filter((v) => accountIds.has(v.accountId)));
 
   const summary = summariseVideos(allVideos);
   const byPlatform = ['instagram', 'youtube', 'tiktok'].map((p) => {
@@ -177,8 +182,10 @@ export function videosToCsv(videos) {
  * или берётся последние 30 дней. Выбор хранится в URL, поэтому страницу
  * можно переслать коллеге.
  */
-export function comparisonData({ db = getDb(), ids = [], from = '', to = '', now = new Date() } = {}) {
-  const allAccounts = listAccounts(db);
+export function comparisonData({
+  db = getDb(), ids = [], from = '', to = '', now = new Date(), ownerId,
+} = {}) {
+  const allAccounts = listAccounts(db, { ownerId });
   const period = parsePeriod({ from, to, now });
   if (period.error) {
     // Форма ответа та же, что и у успешного: страница отрисовки не должна
@@ -203,7 +210,7 @@ export function comparisonData({ db = getDb(), ids = [], from = '', to = '', now
     .map((id) => allAccounts.find((a) => a.id === Number(id)))
     .filter(Boolean);
 
-  const videos = prepareVideos(listVideos({ limit: 5000 }, db));
+  const videos = prepareVideos(listVideos({ limit: 5000, ownerId }, db));
   const selectedIds = new Set(selected.map((a) => a.id));
   const relevant = videos.filter((v) => selectedIds.has(v.accountId));
 

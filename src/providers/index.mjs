@@ -47,7 +47,7 @@ export async function resolveProvider({ refresh = false } = {}) {
  * Если живой источник недоступен, аккаунт создаётся в демо-режиме с честной
  * пометкой, а не падает с 500.
  */
-export async function addAccount(input, { platformHint, notes = '', db = getDb() } = {}) {
+export async function addAccount(input, { platformHint, notes = '', ownerId = null, db = getDb() } = {}) {
   const parsed = parseAccountInput(input, platformHint);
   const existing = db.prepare('SELECT id FROM accounts WHERE platform = ? AND handle = ?')
     .get(parsed.platform, parsed.handle);
@@ -108,6 +108,9 @@ export async function addAccount(input, { platformHint, notes = '', db = getDb()
     handle: parsed.handle,
     notes,
     source,
+    // Владелец из сессии (#7): без него аккаунт создался бы «ничей» и пропал
+    // бы из списка своего же пользователя.
+    ownerId,
   }, db);
 
   const runId = startRun(account.id, source, db);

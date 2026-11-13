@@ -15,9 +15,21 @@ function showToast(message, kind = 'ok') {
   toastTimer = setTimeout(() => { toast.dataset.visible = 'false'; }, 5000);
 }
 
+// CSRF-токен из cookie: сервер требует его для изменяющих запросов, когда
+// сервис открыт по сети (#7). Cookie не HttpOnly именно для этого — прочитать
+// её может только наш собственный скрипт, чужой сайт до неё не доберётся.
+function csrfToken() {
+  const match = document.cookie.match(/(?:^|;\s*)ca_csrf=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
 async function api(path, options = {}) {
+  const token = csrfToken();
   const response = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'x-csrf-token': token } : {}),
+    },
     ...options,
   });
   const text = await response.text();

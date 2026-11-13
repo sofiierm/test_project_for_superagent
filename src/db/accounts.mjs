@@ -27,6 +27,7 @@ export function mapAccount(row) {
     nextSyncAt: row.next_sync_at ?? null,
     syncAttempts: row.sync_attempts ?? 0,
     lastErrorCode: row.last_error_code ?? '',
+    ownerId: row.owner_id ?? null,
     videosCount: row.videos_count ?? 0,
     totalViews: row.total_views ?? 0,
     totalEngagements: row.total_engagements ?? 0,
@@ -34,7 +35,17 @@ export function mapAccount(row) {
   };
 }
 
-export function listAccounts(db = getDb()) {
+/**
+ * Список аккаунтов.
+ *
+ * `ownerId` — фильтр по владельцу (#7). `undefined` значит «все» (локальный
+ * режим и внутренние вызовы), число — только аккаунты этого пользователя.
+ * Различать эти два случая важно: `null` как «все» рано или поздно привёл бы
+ * к показу чужих данных.
+ */
+export function listAccounts(db = getDb(), { ownerId } = {}) {
+  const filter = Number.isInteger(ownerId) ? 'WHERE a.owner_id = ?' : '';
+  const params = Number.isInteger(ownerId) ? [ownerId] : [];
   return db.prepare(`
     SELECT a.*,
            (SELECT COUNT(*) FROM videos v WHERE v.account_id = a.id) AS videos_count,
@@ -44,8 +55,9 @@ export function listAccounts(db = getDb()) {
            (SELECT COALESCE(SUM(v.likes + v.comments + v.shares + v.saves), 0) FROM videos v WHERE v.account_id = a.id) AS total_engagements,
            (SELECT MAX(v.published_at) FROM videos v WHERE v.account_id = a.id) AS last_published_at
     FROM accounts a
+    ${filter}
     ORDER BY a.platform, a.handle
-  `).all().map(mapAccount);
+  `).all(...params).map(mapAccount);
 }
 
 export function getAccount(id, db = getDb()) {
@@ -64,8 +76,8 @@ export function countAccounts(db = getDb()) {
 export function insertAccount(account, db = getDb()) {
   const result = db.prepare(`
     INSERT INTO accounts (platform, handle, display_name, url, avatar_url, bio,
-                          followers, following, posts_count, notes, source, added_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          followers, following, posts_count, notes, source, added_at, owner_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     account.platform,
     account.handle,
@@ -79,6 +91,7 @@ export function insertAccount(account, db = getDb()) {
     account.notes ?? '',
     account.source ?? 'demo',
     nowIso(),
+    Number.isInteger(account.ownerId) ? account.ownerId : null,
   );
   return getAccount(result.lastInsertRowid, db);
 }

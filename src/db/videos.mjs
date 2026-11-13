@@ -59,11 +59,21 @@ const SELECT_VIDEO = `
   FROM videos v JOIN accounts a ON a.id = v.account_id
 `;
 
-export function listVideos({ accountId = null, platform = null, limit = 200 } = {}, db = getDb()) {
+/**
+ * Список роликов.
+ *
+ * `ownerId` (#7) ограничивает выборку аккаунтами владельца. `undefined` —
+ * локальный режим, где разделения нет. Передавать `null` как «все» нельзя:
+ * это ровно та ошибка, из-за которой чужой ролик попал бы в выдачу.
+ */
+export function listVideos({
+  accountId = null, platform = null, limit = 200, ownerId,
+} = {}, db = getDb()) {
   const where = [];
   const params = [];
   if (accountId) { where.push('v.account_id = ?'); params.push(Number(accountId)); }
   if (platform) { where.push('a.platform = ?'); params.push(platform); }
+  if (Number.isInteger(ownerId)) { where.push('a.owner_id = ?'); params.push(ownerId); }
   const sql = `${SELECT_VIDEO}
     ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
     ORDER BY v.published_at DESC
