@@ -215,6 +215,52 @@ async function main() {
     await page.close();
   });
 
+  await scenario('печатная версия: отчёт даёт PDF без навигации и с шапкой', async () => {
+    // #10: отчёт уходит клиенту, поэтому проверяем не «кнопка есть», а что
+    // из страницы действительно получается пригодный документ.
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: 'ru-RU' });
+    // Не полагаемся на конкретный id: предыдущие сценарии добавляют и удаляют
+    // аккаунты, поэтому берём ссылку с живой страницы.
+    await page.goto(`${BASE}/accounts`, { waitUntil: 'networkidle' });
+    const accountHref = await page.locator('.account-card a[href^="/accounts/"]').first().getAttribute('href');
+    assert.ok(accountHref, 'на странице аккаунтов нет ни одной карточки');
+    await page.goto(`${BASE}${accountHref}`, { waitUntil: 'networkidle' });
+
+    const pdf = await page.pdf({ format: 'A4', printBackground: true });
+    assert.equal(pdf.subarray(0, 5).toString(), '%PDF-', 'файл не является PDF');
+    assert.ok(pdf.length > 1000, `PDF подозрительно мал: ${pdf.length} байт`);
+
+    await page.emulateMedia({ media: 'print' });
+    const text = await page.locator('body').innerText();
+    assert.match(text, /Отчёт по аккаунту/, 'в отчёте нет шапки');
+    assert.match(text, /Сформирован/, 'в шапке нет даты формирования');
+    assert.match(text, /демонстрационные/, 'демо-данные не помечены — отчёт выдаст их за статистику');
+    assert.doesNotMatch(text, /NaN|undefined/, 'в отчёте есть незаполненные значения');
+
+    // То, что не является частью отчёта, на бумаге не печатается.
+    assert.equal(await page.locator('.nav__link').first().isVisible(), false, 'в отчёт попала навигация');
+    assert.equal(await page.locator('.footer').isVisible(), false, 'в отчёт попал подвал');
+    assert.equal(await page.locator('[data-print-report]').isVisible(), false, 'в отчёт попала кнопка печати');
+    // Тёмная тема на бумаге тратит тонер: печатная версия должна быть светлой.
+    const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    assert.equal(bg, 'rgb(255, 255, 255)', `фон при печати ${bg}, а не белый`);
+    await page.close();
+  });
+
+  await scenario('кнопка отчёта открывает печать, а не молчит', async () => {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(`${BASE}/accounts`, { waitUntil: 'networkidle' });
+    const href = await page.locator('.account-card a[href^="/accounts/"]').first().getAttribute('href');
+    await page.goto(`${BASE}${href}`, { waitUntil: 'networkidle' });
+    // Печать блокирует страницу, поэтому подменяем window.print в контексте
+    // и проверяем, что кнопка до него действительно доходит.
+    await page.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed += 1; }; });
+    await page.click('[data-print-report]');
+    await page.waitForFunction(() => window.__printed > 0, { timeout: 3000 });
+    assert.equal(await page.evaluate(() => window.__printed), 1, 'печать вызвана не один раз');
+    await page.close();
+  });
+
   await scenario('страница 404 объясняет, что произошло', async () => {
     const page = await browser.newPage();
     const response = await page.goto(`${BASE}/accounts/99999`);

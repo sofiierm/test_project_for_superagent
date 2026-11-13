@@ -497,3 +497,98 @@ dialog.modal::backdrop { background: rgba(5, 7, 11, 0.72); backdrop-filter: blur
 }
 .chart-legend__item { display: inline-flex; align-items: center; gap: 7px; }
 .chart-legend__swatch { flex: 0 0 auto; overflow: visible; }
+
+/* ---------- Печать отчёта (#10) ----------
+ *
+ * Отчёт печатают на бумаге или сохраняют в PDF из браузера. Тёмная тема на
+ * бумаге тратит тонер и читается хуже, поэтому печатная версия принудительно
+ * светлая: цвета инвертируются, фоны снимаются, декоративные элементы скрыты.
+ * Печатается только содержательная часть — без навигации, кнопок и подвала.
+ */
+@page {
+  margin: 14mm 12mm;
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+    --bg: #ffffff;
+    --bg-raised: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f4f6fa;
+    --line: #cfd6e2;
+    --line-strong: #aab4c4;
+    --text: #10141c;
+    --text-muted: #4a5464;
+    --text-dim: #6b7484;
+    --accent: #2f4fd0;
+    --accent-strong: #1f3ab0;
+    --accent-soft: #e8edff;
+    --good: #12755c;
+    --warn: #8a6100;
+    --bad: #a82a44;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #10141c !important;
+    font-size: 11pt;
+  }
+
+  /* Навигация, кнопки и подвал — не часть отчёта. */
+  .topbar__inner .nav,
+  .footer,
+  .page-head__actions,
+  .toast,
+  dialog.modal,
+  .chip,
+  [data-open-add-account],
+  [data-sync-account],
+  [data-delete-account] {
+    display: none !important;
+  }
+
+  .shell { padding: 0 !important; }
+  .main { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+
+  /* Тени и градиенты на бумаге превращаются в серые пятна. */
+  .card {
+    background: #ffffff !important;
+    border: 1px solid #cfd6e2 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 8mm;
+  }
+  .card--accent { border-color: #2f4fd0 !important; }
+
+  /* Таблица не должна разрываться так, что заголовок остаётся на одной
+     странице, а строки — на другой. */
+  table.data, .table { width: 100% !important; font-size: 9pt; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; page-break-inside: avoid; }
+
+  /* SVG-графики печатаем как есть, но фиксируем высоту: иначе они
+     растягиваются на всю страницу. */
+  svg.chart { max-height: 70mm; }
+
+  a { color: #10141c !important; text-decoration: none; }
+  /* Ссылки в отчёте бесполезны без URL, но и печатать полный URL в каждой
+     ячейке — шум. Показываем адрес только у содержательных ссылок. */
+  .cell-title__main::after { content: ""; }
+
+  /* Шапка отчёта: кто, за какой период и когда сформирован. */
+  .report-head {
+    display: block !important;
+    margin-bottom: 6mm;
+    padding-bottom: 3mm;
+    border-bottom: 2px solid #2f4fd0;
+  }
+  .report-head__title { font-size: 16pt; font-weight: 700; margin: 0 0 2mm; }
+  .report-head__meta { font-size: 9pt; color: #4a5464; margin: 0; }
+
+  .notice { border: 1px solid #cfd6e2 !important; background: #ffffff !important; }
+}
+
+/* На экране шапка отчёта не нужна: те же данные уже в заголовке страницы. */
+.report-head { display: none; }
