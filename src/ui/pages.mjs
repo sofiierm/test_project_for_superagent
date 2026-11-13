@@ -3,7 +3,8 @@ import { html, raw } from './html.mjs';
 import { layout } from './layout.mjs';
 import {
   columnsChart, deltaBadge, emptyState, hookTable, insightList, lineChart, multiLineChart,
-  notice, platformBadge, reportHead, sentimentBar, statCard, syncScheduleLabel, topicsList,
+  notice, platformBadge, reportHead, semanticBadge, sentimentBar, similarList, statCard,
+  syncScheduleLabel, topicsList,
   videosTable, PLATFORM_LABELS,
 } from './components.mjs';
 import {
@@ -13,7 +14,7 @@ import {
 const WEEKDAY_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 export function dashboardPage(data, { mode, providerReason, user = null, nav = [], csrf = '' }) {
-  const { accounts, summary, insights, series, byPlatform, topVideos, topics, sentiment, hooks, hashtags } = data;
+  const { accounts, summary, insights, series, byPlatform, topVideos, topics, sentiment, hooks, hashtags, semantic } = data;
 
   if (!accounts.length) {
     return layout({
@@ -158,7 +159,10 @@ export function dashboardPage(data, { mode, providerReason, user = null, nav = [
       <section class="grid grid--3">
         <div class="card">
           <div class="card__head"><h2 class="card__title">Темы контента</h2></div>
-          <p class="card__hint" style="margin-bottom:10px">Ключевые термины по текстам и хештегам. Множитель — во сколько раз средний охват роликов с темой выше среднего по всем роликам.</p>
+          ${semanticBadge(semantic, { mode: semantic?.mode })}
+          ${semantic?.active
+            ? html`<p class="card__hint" style="margin-bottom:10px">Темы объединены по смыслу текстов.</p>`
+            : html`<p class="card__hint" style="margin-bottom:10px">Ключевые термины по текстам и хештегам. Множитель — во сколько раз средний охват роликов с темой выше среднего по всем роликам.</p>`}
           ${topicsList(topics)}
         </div>
         <div class="card">
@@ -267,7 +271,8 @@ export function accountsPage(accounts, { mode, providerReason, user = null, nav 
 
 export function accountPage(data, { mode, providerReason, user = null, nav = [], csrf = '' }) {
   const {
-    account, videos, summary, insights, series, topics, hashtags, sentiment, hooks,
+    account, videos, summary, insights, series, topics, hashtags, sentiment, hooks, semantic,
+    similarVideos,
     bestTimes, cadence, outliers, weakest, runs, viewsDelta,
   } = data;
 
@@ -381,6 +386,7 @@ export function accountPage(data, { mode, providerReason, user = null, nav = [],
       <section class="grid grid--2">
         <div class="card">
           <div class="card__head"><h2 class="card__title">Темы контента</h2><span class="card__hint">по охвату</span></div>
+          ${semanticBadge(semantic, { mode: semantic?.mode })}
           ${topicsList(topics)}
         </div>
         <div class="card">
@@ -388,6 +394,19 @@ export function accountPage(data, { mode, providerReason, user = null, nav = [],
           ${hookTable(hooks)}
         </div>
       </section>
+
+      ${semantic?.active
+        ? html`<section class="grid grid--2" style="margin-top:16px">
+            <div class="card">
+              <div class="card__head">
+                <h2 class="card__title">Похожие ролики</h2>
+                <span class="card__hint">повторяющиеся форматы</span>
+              </div>
+              <p class="card__hint" style="margin-bottom:10px">Пары с близким смыслом текста. Высокая близость — повод проверить, не повторяется ли формат без нового.</p>
+              ${similarList(similarVideos)}
+            </div>
+          </section>`
+        : ''}
 
       <section class="grid grid--3" style="margin-top:16px">
         <div class="card">

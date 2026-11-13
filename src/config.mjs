@@ -84,6 +84,13 @@ export const config = {
   // Secure-флаг cookie: включать за HTTPS, иначе браузер не сохранит cookie
   // на http://localhost и вход будет «молча» не работать.
   cookieSecure: bool(process.env.COOKIE_SECURE, false),
+  // ---- Семантический анализ (#11) ----
+  // none | local | remote. По умолчанию none: словарный анализ работает офлайн
+  // и ничего не отправляет наружу. local склеивает словоформы без сети,
+  // remote отправляет тексты роликов во внешний сервис — это осознанный выбор.
+  embeddingProvider: process.env.EMBEDDING_PROVIDER || 'none',
+  embeddingEndpoint: process.env.EMBEDDING_ENDPOINT || '',
+  embeddingTimeoutMs: Math.max(1000, int(process.env.EMBEDDING_TIMEOUT_MS, 15_000)),
   appName: 'Creator Analytics',
 };
 

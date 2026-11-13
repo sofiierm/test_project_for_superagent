@@ -11,6 +11,8 @@ import {
 } from '../analysis/metrics.mjs';
 import { analyzeHooks, analyzeSentiment, detectHooks, extractHashtags, extractTopics, textStats } from '../analysis/text.mjs';
 import { buildInsights } from '../analysis/insights.mjs';
+import { analyseContent } from '../analysis/semantic.mjs';
+import { createEmbedder } from '../analysis/embeddings.mjs';
 
 function decorate(video) {
   return {
@@ -27,8 +29,8 @@ export function prepareVideos(videos) {
   return videos.map(decorate);
 }
 
-export function dashboardData({
-  db = getDb(), platform = null, accountId = null, ownerId,
+export async function dashboardData({
+  db = getDb(), platform = null, accountId = null, ownerId, embedder = createEmbedder(),
 } = {}) {
   const accounts = listAccounts(db, { ownerId }).filter((a) => (!platform || a.platform === platform)
     && (!accountId || a.id === Number(accountId)));
@@ -53,6 +55,11 @@ export function dashboardData({
     };
   });
 
+  const topics = extractTopics(allVideos, { limit: 10 });
+  // Семантика необязательна: без провайдера `analyseContent` вернёт словарные
+  // темы и причину, а страница честно её покажет.
+  const semantic = await analyseContent(allVideos, { embedder, fallbackTopics: topics, limit: 10 });
+
   return {
     accounts,
     videos: allVideos,
@@ -65,14 +72,15 @@ export function dashboardData({
     erDelta: periodDelta(allVideos, { metric: 'er' }),
     topVideos: rankVideos(allVideos, { limit: 5, metric: 'views' }),
     topErVideos: rankVideos(allVideos, { limit: 5, metric: 'er' }),
-    topics: extractTopics(allVideos, { limit: 10 }),
+    topics: semantic.topics,
+    semantic: { mode: semantic.mode, active: semantic.active, reason: semantic.reason },
     hashtags: extractHashtags(allVideos, { limit: 12 }),
     sentiment: analyzeSentiment(allVideos),
     hooks: analyzeHooks(allVideos),
   };
 }
 
-export function accountData(accountId, { db = getDb() } = {}) {
+export async function accountData(accountId, { db = getDb(), embedder = createEmbedder() } = {}) {
   const account = getAccount(accountId, db);
   if (!account) return null;
   const videos = prepareVideos(listVideos({ accountId: account.id, limit: 1000 }, db));
@@ -84,13 +92,18 @@ export function accountData(accountId, { db = getDb() } = {}) {
     return d < Date.now() - 30 * 24 * 3600 * 1000;
   });
 
+  const topics = extractTopics(videos, { limit: 14 });
+  const semantic = await analyseContent(videos, { embedder, fallbackTopics: topics, limit: 14 });
+
   return {
     account,
     videos,
     summary,
     series: buildSeries(videos, { days: 180, bucket: 'week' }),
     insights: buildInsights(videos, { followers: account.followers, account }),
-    topics: extractTopics(videos, { limit: 14 }),
+    topics: semantic.topics,
+    semantic: { mode: semantic.mode, active: semantic.active, reason: semantic.reason },
+    similarVideos: semantic.similar,
     hashtags: extractHashtags(videos, { limit: 14 }),
     sentiment: analyzeSentiment(videos),
     hooks: analyzeHooks(videos),
