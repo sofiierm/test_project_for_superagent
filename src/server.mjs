@@ -19,11 +19,13 @@ import { isSyncInFlight } from './lib/sync-lock.mjs';
 import { startScheduler } from './services/scheduler.mjs';
 import { needsSeed, seedDemoData } from './services/seed.mjs';
 import {
-  accountData, dashboardData, overviewStats, prepareVideos, videoData, videosToCsv,
+  accountData, comparisonData, dashboardData, overviewStats, parseAccountIds, prepareVideos,
+  videoData, videosToCsv,
 } from './services/analytics.mjs';
 import { htmlToString } from './ui/html.mjs';
 import {
-  accountPage, accountsPage, dashboardPage, helpPage, notFoundPage, videoPage, videosPage,
+  accountPage, accountsPage, comparePage, dashboardPage, helpPage, notFoundPage, videoPage,
+  videosPage,
 } from './ui/pages.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -320,6 +322,18 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
       }
       if (route === '/accounts') {
         return sendHtml(res, 200, accountsPage(listAccounts(), { mode, providerReason }));
+      }
+      if (route === '/compare') {
+        const ids = parseAccountIds(url.searchParams.get('accounts'));
+        const data = comparisonData({
+          ids,
+          from: url.searchParams.get('from') ?? '',
+          to: url.searchParams.get('to') ?? '',
+        });
+        if (data.error) {
+          return sendHtml(res, 422, comparePage(data, { mode, providerReason }));
+        }
+        return sendHtml(res, 200, comparePage(data, { mode, providerReason }));
       }
       if (route === '/videos') {
         const platform = url.searchParams.get('platform');

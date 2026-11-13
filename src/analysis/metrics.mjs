@@ -299,3 +299,153 @@ export function growthFromSnapshots(snapshots) {
     dailyViews: days > 0 ? growth / days : null,
   };
 }
+
+/**
+ * Разбор периода из пользовательского ввода.
+ *
+ * Даты приходят из URL, поэтому мусор не должен превращаться в «весь диапазон»:
+ * молча проигнорированная дата даёт правдоподобный, но не тот отчёт.
+ * Возвращает `{ from, to }` как Date или `{ error }` с человеческим текстом.
+ */
+export function parsePeriod({ from, to, now = new Date() } = {}) {
+  const end = parseDate(now) || new Date();
+  // Дата без времени означает день целиком. Для начала периода это 00:00,
+  // для конца — 23:59:59.999: иначе «по 20 мая» отрезало бы весь последний
+  // день, и пользователь не увидел бы свежие ролики.
+  const parseOne = (value, label, endOfDay = false) => {
+    if (value === undefined || value === null || value === '') return null;
+    const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const d = parseDate(dateOnly ? `${value}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}Z` : value);
+    if (!d) return { error: `${label}: не удалось разобрать дату «${value}». Ожидается ГГГГ-ММ-ДД.` };
+    return { date: d };
+  };
+
+  const start = parseOne(from, 'Начало периода');
+  if (start?.error) return { error: start.error };
+  const finish = parseOne(to, 'Конец периода', true);
+  if (finish?.error) return { error: finish.error };
+
+  // По умолчанию — последние 30 дней включительно.
+  const toDate = finish?.date ?? end;
+  const fromDate = start?.date ?? new Date(toDate.getTime() - 29 * 24 * 3600 * 1000);
+
+  if (fromDate > toDate) {
+    return { error: 'Начало периода позже конца: сравнение не имеет смысла.' };
+  }
+  const span = periodDays(fromDate, toDate);
+  if (span > 366 * 3) {
+    return { error: 'Период длиннее трёх лет: сузьте диапазон.' };
+  }
+  return { from: fromDate, to: toDate, days: span, error: '' };
+}
+
+/**
+ * Длина периода в календарных днях, включительно.
+ *
+ * Оба конца периода входят в него, поэтому «1 мая 00:00 — 10 мая 23:59»
+ * это 10 дней: целых суток между границами девять, плюс сам последний день.
+ * `Math.floor(diff) + 1` одинаково верно считает и границы по полуночи, и
+ * конец периода в последней миллисекунде дня.
+ */
+export function periodDays(from, to) {
+  if (!from || !to) return 0;
+  const diff = (to.getTime?.() ?? Number(to)) - (from.getTime?.() ?? Number(from));
+  if (diff < 0) return 0;
+  return Math.max(1, Math.floor(diff / (24 * 3600 * 1000)) + 1);
+}
+
+/**
+ * Предыдущий период той же длины, вплотную перед текущим. Нужен, чтобы
+ * «выбранный период» сравнивался с сопоставимым, а не с фиксированными 30 днями.
+ */
+export function previousPeriod(from, to) {
+  if (!from || !to) return { from: null, to: null };
+  const days = periodDays(from, to);
+  // Конец предыдущего периода — последняя миллисекунда перед началом текущего:
+  // так периоды примыкают без дыры и без нахлёста.
+  const prevTo = new Date(from.getTime() - 1);
+  const prevFrom = new Date(from.getTime() - days * 24 * 3600 * 1000);
+  return { from: prevFrom, to: prevTo };
+}
+
+/** Ролики, опубликованные внутри периода включительно. */
+export function videosInPeriod(videos, from, to) {
+  if (!from || !to) return [];
+  return videos.filter((v) => {
+    const d = parseDate(v.publishedAt);
+    return d && d >= from && d <= to;
+  });
+}
+
+/**
+ * Сравнение нескольких аккаунтов за один и тот же период.
+ *
+ * Метрики считаются на роликах периода, а не на всём архиве: иначе «кто растёт
+ * быстрее» превращалось бы в «у кого длиннее история». Аккаунт без публикаций
+ * в периоде остаётся в таблице с нулями и пометкой — пропажа строки выглядела
+ * бы как пропажа аккаунта.
+ */
+export function compareAccounts(accounts, videos, { from, to } = {}) {
+  const rows = accounts.map((account) => {
+    const own = videos.filter((v) => v.accountId === account.id);
+    const inPeriod = videosInPeriod(own, from, to);
+    const summary = summariseVideos(inPeriod, { followers: account.followers });
+    return {
+      account,
+      videos: inPeriod.length,
+      totalViews: summary.totalViews,
+      medianViews: summary.medianViews,
+      totalEngagements: summary.totalEngagements,
+      avgEr: summary.avgEr,
+      medianEr: summary.medianEr,
+      avgFollowerReach: summary.avgFollowerReach,
+      videosPerWeek: periodDays(from, to) ? (inPeriod.length / (periodDays(from, to) / 7)) : 0,
+      hasData: inPeriod.length > 0,
+    };
+  });
+
+  const best = (key) => {
+    const withData = rows.filter((r) => r.hasData);
+    if (!withData.length) return null;
+    return withData.reduce((a, b) => (b[key] > a[key] ? b : a)).account.id;
+  };
+
+  return {
+    rows,
+    // «Лидер» — максимум по метрике среди аккаунтов с данными. При равенстве
+    // остаётся первый: подсветка двух лидеров сразу сбивает с толку.
+    leaders: {
+      views: best('totalViews'),
+      er: best('avgEr'),
+      reach: best('avgFollowerReach'),
+      pace: best('videosPerWeek'),
+    },
+  };
+}
+
+/**
+ * Динамика аккаунтов внутри периода против предыдущего периода той же длины.
+ * Возвращает изменение в процентах по просмотрам и ER; null — если сравнивать
+ * не с чем (в прошлом периоде не было публикаций).
+ */
+export function compareGrowth(accounts, videos, { from, to } = {}) {
+  const prev = previousPeriod(from, to);
+  return accounts.map((account) => {
+    const own = videos.filter((v) => v.accountId === account.id);
+    const current = videosInPeriod(own, from, to);
+    const before = videosInPeriod(own, prev.from, prev.to);
+    const curSummary = summariseVideos(current);
+    const prevSummary = summariseVideos(before);
+    const change = (cur, beforeValue) => (before.length && beforeValue
+      ? ((cur - beforeValue) / beforeValue) * 100
+      : null);
+
+    return {
+      account,
+      videos: current.length,
+      viewsChange: change(curSummary.totalViews, prevSummary.totalViews),
+      erChange: before.length ? curSummary.avgEr - prevSummary.avgEr : null,
+      hasComparison: before.length > 0,
+    };
+  });
+}

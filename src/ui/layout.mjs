@@ -4,6 +4,7 @@ import { html } from './html.mjs';
 const NAV = [
   { href: '/', label: 'Обзор', key: 'dashboard' },
   { href: '/accounts', label: 'Аккаунты', key: 'accounts' },
+  { href: '/compare', label: 'Сравнение', key: 'compare' },
   { href: '/videos', label: 'Ролики', key: 'videos' },
   { href: '/help', label: 'Как это работает', key: 'help' },
 ];

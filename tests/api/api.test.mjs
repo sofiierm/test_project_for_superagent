@@ -333,3 +333,61 @@ function splitCsv(line) {
   values.push(current);
   return values;
 }
+
+// ---- Сравнение аккаунтов и периодов (#9) ----
+
+test('страница сравнения открывается без выбора и объясняет пустое состояние', async () => {
+  const response = await request('/compare');
+  assert.equal(response.status, 200);
+  const page = await response.text();
+  assert.match(page, /Аккаунты не выбраны/);
+  // Без выбора страница всё равно должна предлагать действие, а не тупик.
+  assert.match(page, /Сравнить первые два/);
+});
+
+test('сравнение двух аккаунтов показывает обоих в таблице', async () => {
+  const accounts = listAccounts();
+  const response = await request(`/compare?accounts=${accounts[0].id},${accounts[1].id}`);
+  assert.equal(response.status, 200);
+  const page = await response.text();
+  assert.match(page, /Метрики за период/);
+  // Оба выбранных аккаунта присутствуют в таблице.
+  const names = accounts.slice(0, 2).map((a) => a.displayName || `@${a.handle}`);
+  for (const name of names) {
+    assert.ok(page.includes(name), `аккаунт ${name} пропал из сравнения`);
+  }
+  // Никаких NaN/undefined в отрисованных числах.
+  assert.doesNotMatch(page, /\bNaN\b/);
+  assert.doesNotMatch(page, /undefined/);
+});
+
+test('сравнение сохраняет выбор и период в URL-форме', async () => {
+  const accounts = listAccounts();
+  const response = await request(`/compare?accounts=${accounts[0].id}&from=2026-01-01&to=2026-01-31`);
+  assert.equal(response.status, 200);
+  const page = await response.text();
+  // Значения подставлены обратно в форму, чтобы ссылку можно было поправить.
+  assert.match(page, /name="from"[^>]*value="2026-01-01"|value="2026-01-01"[^>]*name="from"/);
+  assert.match(page, /value="2026-01-31"/);
+});
+
+test('мусорные даты в сравнении дают 422 с объяснением, а не 500', async () => {
+  const accounts = listAccounts();
+  const response = await request(`/compare?accounts=${accounts[0].id}&from=2026-13-45`);
+  assert.equal(response.status, 422);
+  const page = await response.text();
+  assert.match(page, /не удалось разобрать/);
+  assert.doesNotMatch(page, /Внутренняя ошибка/);
+});
+
+test('перевёрнутый период в сравнении — 422, а не пустая таблица', async () => {
+  const response = await request('/compare?accounts=1&from=2026-05-10&to=2026-05-01');
+  assert.equal(response.status, 422);
+  assert.match(await response.text(), /позже конца/);
+});
+
+test('невычислимые id в параметре accounts игнорируются, а не ломают страницу', async () => {
+  const response = await request('/compare?accounts=abc,99999');
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /Аккаунты не выбраны/);
+});

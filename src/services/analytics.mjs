@@ -5,8 +5,9 @@ import { getAccount, listAccounts } from '../db/accounts.mjs';
 import { engagementRateOf, getVideo, listSnapshots, listVideos } from '../db/videos.mjs';
 import { listRuns } from '../db/runs.mjs';
 import {
-  bestTimes, buildSeries, cadence, engagementRate, followerReach, growthFromSnapshots,
-  periodDelta, rankVideos, summariseVideos,
+  bestTimes, buildSeries, cadence, compareAccounts, compareGrowth, engagementRate,
+  followerReach, growthFromSnapshots, parsePeriod, periodDays, previousPeriod, periodDelta,
+  rankVideos, summariseVideos, videosInPeriod,
 } from '../analysis/metrics.mjs';
 import { analyzeHooks, analyzeSentiment, detectHooks, extractHashtags, extractTopics, textStats } from '../analysis/text.mjs';
 import { buildInsights } from '../analysis/insights.mjs';
@@ -166,4 +167,94 @@ export function videosToCsv(videos) {
     engagementRateOf(v).toFixed(2), v.url,
   ].map(escape).join(';'));
   return `\uFEFF${headers.join(';')}\n${rows.join('\n')}\n`;
+}
+
+/**
+ * Данные для страницы сравнения (#9).
+ *
+ * `ids` — выбранные аккаунты (2–4 по замыслу, но код не ломается на одном и
+ * на пустом списке: пустое состояние честнее ошибки). Период задаётся явно
+ * или берётся последние 30 дней. Выбор хранится в URL, поэтому страницу
+ * можно переслать коллеге.
+ */
+export function comparisonData({ db = getDb(), ids = [], from = '', to = '', now = new Date() } = {}) {
+  const allAccounts = listAccounts(db);
+  const period = parsePeriod({ from, to, now });
+  if (period.error) {
+    // Форма ответа та же, что и у успешного: страница отрисовки не должна
+    // падать на битом периоде — иначе пользователь увидит 500 вместо
+    // объяснения, что не так с датами.
+    return {
+      error: period.error,
+      accounts: allAccounts,
+      selected: [],
+      period: null,
+      comparison: { rows: [], leaders: {} },
+      growth: [],
+      series: [],
+      keys: [],
+      bucket: 'day',
+    };
+  }
+
+  // Порядок и количество выбранных сохраняем как пришли: пользователь выбрал
+  // аккаунты в осмысленном порядке, пересортировка сбила бы сравнение.
+  const selected = ids
+    .map((id) => allAccounts.find((a) => a.id === Number(id)))
+    .filter(Boolean);
+
+  const videos = prepareVideos(listVideos({ limit: 5000 }, db));
+  const selectedIds = new Set(selected.map((a) => a.id));
+  const relevant = videos.filter((v) => selectedIds.has(v.accountId));
+
+  const comparison = compareAccounts(selected, relevant, period);
+  const growth = compareGrowth(selected, relevant, period);
+  const prev = previousPeriod(period.from, period.to);
+
+  // Ряды выравниваем по общим ключам, чтобы линии были сопоставимы по оси:
+  // у каждого аккаунта свой набор недель, и «наложить» их можно только на
+  // общий календарь.
+  const currentSeries = selected.map((account) => ({
+    key: account.id,
+    label: account.displayName || `@${account.handle}`,
+    rows: buildSeries(videosInPeriod(relevant.filter((v) => v.accountId === account.id), period.from, period.to), {
+      days: periodDays(period.from, period.to),
+      bucket: periodDays(period.from, period.to) <= 45 ? 'day' : 'week',
+      now: period.to,
+    }),
+  }));
+  const keys = [...new Set(currentSeries.flatMap((s) => s.rows.map((r) => r.key)))].sort();
+
+  const series = currentSeries.map((s) => {
+    const byKey = new Map(s.rows.map((r) => [r.key, r]));
+    return { ...s, rows: keys.map((k) => byKey.get(k) ?? null) };
+  });
+
+  return {
+    accounts: allAccounts,
+    selected,
+    period: {
+      from: period.from.toISOString(),
+      to: period.to.toISOString(),
+      days: period.days,
+      fromInput: period.from.toISOString().slice(0, 10),
+      toInput: period.to.toISOString().slice(0, 10),
+      previous: { from: prev.from?.toISOString() ?? null, to: prev.to?.toISOString() ?? null },
+    },
+    comparison,
+    growth,
+    series,
+    keys,
+    bucket: periodDays(period.from, period.to) <= 45 ? 'day' : 'week',
+    error: '',
+  };
+}
+
+/** Разбор `accounts` из query: «1,2,3», повторяющийся параметр, мусор отбрасываем. */
+export function parseAccountIds(value) {
+  const raw = Array.isArray(value) ? value : String(value ?? '').split(',');
+  return raw
+    .flatMap((part) => String(part).split(','))
+    .map((part) => Number(String(part).trim()))
+    .filter((id) => Number.isInteger(id) && id > 0);
 }
