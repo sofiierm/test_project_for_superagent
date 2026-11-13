@@ -668,3 +668,40 @@ dialog.modal::backdrop { background: rgba(5, 7, 11, 0.72); backdrop-filter: blur
     display: none !important;
   }
 }
+
+/* ---- Семантический анализ (#11) ---- */
+
+.card__hint--warn {
+  color: var(--warn);
+}
+
+.similar {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.similar + .similar {
+  margin-top: 10px;
+}
+
+.similar__score {
+  flex: 0 0 auto;
+  min-width: 48px;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.similar__titles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+  line-height: 1.4;
+}
+
+.similar__vs {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}

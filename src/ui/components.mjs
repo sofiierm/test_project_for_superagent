@@ -239,6 +239,55 @@ export function topicsList(topics, { metric = 'lift' } = {}) {
     </div>`;
 }
 
+/**
+ * Режим семантического анализа (#11).
+ *
+ * Когда провайдер выключен, темы считаются по словарю — это нормальный режим
+ * работы, а не ошибка. Поэтому «выключено» показывается нейтрально, а вот
+ * включённый и упавший провайдер — предупреждением: пользователь должен знать,
+ * что видит словарный результат вместо семантического.
+ */
+export function semanticBadge(semantic, { mode = 'none' } = {}) {
+  if (!semantic) return '';
+  if (!semantic.active) {
+    const isFault = Boolean(semantic.reason) && mode !== 'none';
+    return html`<p class="card__hint${isFault ? ' card__hint--warn' : ''}" style="margin-bottom:10px">
+      ${semantic.reason || 'Семантический анализ выключен — темы считаются по словарю.'}
+    </p>`;
+  }
+  return html`<p class="card__hint" style="margin-bottom:10px">
+    Темы объединены по смыслу текстов (провайдер: ${mode === 'remote' ? 'внешний сервис' : 'локальный'}).
+  </p>`;
+}
+
+/**
+ * Похожие ролики: повторяющиеся форматы (#11).
+ *
+ * Показываем пары, а не группы: вопрос пользователя — «какой ролик повторяет
+ * какой», и на него отвечает именно пара с процентом близости.
+ */
+export function similarList(pairs) {
+  if (!pairs || !pairs.length) {
+    return html`<p class="card__hint">Похожих роликов не нашлось: тексты достаточно различаются.</p>`;
+  }
+  return html`
+    <div class="list">
+      ${pairs.map((pair) => html`
+        <div class="similar">
+          <span class="similar__score">${formatPercent(pair.score * 100)}</span>
+          <span class="similar__titles">
+            ${pair.a.id
+              ? html`<a href="/videos/${pair.a.id}">${pair.a.title || 'Без названия'}</a>`
+              : html`<span>${pair.a.title || 'Без названия'}</span>`}
+            <span class="similar__vs">повторяет</span>
+            ${pair.b.id
+              ? html`<a href="/videos/${pair.b.id}">${pair.b.title || 'Без названия'}</a>`
+              : html`<span>${pair.b.title || 'Без названия'}</span>`}
+          </span>
+        </div>`)}
+    </div>`;
+}
+
 export function hookTable(hooks) {
   const rows = hooks.filter((h) => h.count > 0);
   if (!rows.length) return html`<p class="card__hint">Приёмы подачи не распознаны.</p>`;

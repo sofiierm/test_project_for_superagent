@@ -506,7 +506,7 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
       }
 
       if (route === '/api/overview' && req.method === 'GET') {
-        const data = dashboardData({ ownerId: ownerScope });
+        const data = await dashboardData({ ownerId: ownerScope });
         return sendJson(res, 200, {
           summary: data.summary,
           byPlatform: data.byPlatform,
@@ -530,7 +530,7 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
       }
 
       if (route === '/') {
-        return sendHtml(res, 200, dashboardPage(dashboardData({ ownerId: ownerScope }), view));
+        return sendHtml(res, 200, dashboardPage(await dashboardData({ ownerId: ownerScope }), view));
       }
       if (route === '/accounts') {
         return sendHtml(res, 200, accountsPage(scopedAccounts(), view));
@@ -563,7 +563,7 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
         // Проверка владения до построения страницы: чужой аккаунт должен
         // отвечать 404, а не отдавать данные с кодом 200.
         if (!ownedAccount(Number(accountMatch[1]))) return notFound(res, mode);
-        const data = accountData(Number(accountMatch[1]));
+        const data = await accountData(Number(accountMatch[1]));
         if (!data) return notFound(res, mode);
         return sendHtml(res, 200, accountPage(data, view));
       }

@@ -391,3 +391,27 @@ test('невычислимые id в параметре accounts игнорир�
   assert.equal(response.status, 200);
   assert.match(await response.text(), /Аккаунты не выбраны/);
 });
+
+// ---- Семантический анализ (#11) ----
+
+test('по умолчанию темы считаются словарным анализом, без сети', async () => {
+  // Провайдер выключен в тестовом окружении: страница обязана работать так же,
+  // как до появления семантики, и сообщать об этом честно.
+  const dashboard = await request('/');
+  assert.equal(dashboard.status, 200);
+  const html = await dashboard.text();
+  assert.match(html, /Семантический анализ выключен/);
+  assert.match(html, /Темы контента/);
+});
+
+test('API обзора отдаёт темы и режим анализа', async () => {
+  const response = await request('/api/overview');
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.ok(Array.isArray(payload.topics));
+  assert.ok(payload.topics.length > 0, 'темы пропали из API');
+  for (const topic of payload.topics) {
+    assert.equal(typeof topic.label, 'string');
+    assert.ok(Number.isFinite(topic.count));
+  }
+});
