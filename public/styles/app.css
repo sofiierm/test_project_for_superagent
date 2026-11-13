@@ -592,3 +592,79 @@ dialog.modal::backdrop { background: rgba(5, 7, 11, 0.72); backdrop-filter: blur
 
 /* На экране шапка отчёта не нужна: те же данные уже в заголовке страницы. */
 .report-head { display: none; }
+
+/* ---- Доступ и вход (#7) ---- */
+
+.auth {
+  display: grid;
+  place-items: center;
+  min-height: 70vh;
+  padding: 24px 0;
+}
+
+.auth__card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth__title {
+  margin: 0 0 8px;
+  font-size: 1.4rem;
+}
+
+.auth__form {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+/* Пользователь и выход в шапке: рядом с бейджем режима, но отдельной группой,
+   чтобы «Выйти» не выглядел частью статуса данных. */
+.topbar__user {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding-left: 12px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar__logout {
+  display: inline-flex;
+}
+
+.btn--small {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+
+.table__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table__actions form {
+  display: inline;
+}
+
+.btn--danger {
+  color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 40%, transparent);
+}
+
+.btn--danger:hover {
+  background: color-mix(in srgb, var(--bad) 12%, transparent);
+}
+
+@media print {
+  /* Служебные элементы доступа в отчёт не попадают. */
+  .topbar__user,
+  .topbar__logout {
+    display: none !important;
+  }
+}

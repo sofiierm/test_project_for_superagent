@@ -87,6 +87,30 @@ CREATE TABLE IF NOT EXISTS sync_runs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sync_runs_account ON sync_runs(account_id, started_at DESC);
+
+-- Пользователи и сессии (#7). Пароль хранится только как scrypt-хеш, токен
+-- сессии — только как SHA-256: утечка базы не даёт ни паролей, ни готовых cookie.
+CREATE TABLE IF NOT EXISTS users (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  email         TEXT NOT NULL UNIQUE,
+  name          TEXT NOT NULL DEFAULT '',
+  password_hash TEXT NOT NULL,
+  role          TEXT NOT NULL DEFAULT 'viewer' CHECK (role IN ('owner', 'viewer')),
+  created_at    TEXT NOT NULL,
+  last_login_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash  TEXT NOT NULL UNIQUE,
+  created_at  TEXT NOT NULL,
+  expires_at  TEXT NOT NULL,
+  user_agent  TEXT NOT NULL DEFAULT '',
+  ip          TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id, expires_at DESC);
 `;
 
 let instance = null;
@@ -99,13 +123,22 @@ const ACCOUNT_MIGRATIONS = [
   ['next_sync_at', 'TEXT'],
   ['sync_attempts', 'INTEGER NOT NULL DEFAULT 0'],
   ['last_error_code', "TEXT NOT NULL DEFAULT ''"],
+  // Владение аккаунтом (#7). NULL значит «до появления пользователей»:
+  // такие аккаунты достаются владельцу при первой настройке, а не теряются.
+  ['owner_id', 'INTEGER REFERENCES users(id) ON DELETE CASCADE'],
 ];
 
-function migrate(db) {
-  const columns = new Set(db.prepare('PRAGMA table_info(accounts)').all().map((row) => row.name));
-  for (const [name, definition] of ACCOUNT_MIGRATIONS) {
-    if (!columns.has(name)) db.exec(`ALTER TABLE accounts ADD COLUMN ${name} ${definition}`);
+function addColumns(db, table, migrations) {
+  const columns = new Set(db.prepare(`PRAGMA table_info(${table})`).all().map((row) => row.name));
+  for (const [name, definition] of migrations) {
+    if (!columns.has(name)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${definition}`);
   }
+}
+
+function migrate(db) {
+  addColumns(db, 'accounts', ACCOUNT_MIGRATIONS);
+  // Индекс по владельцу создаём после миграции: на старой базе колонки ещё нет.
+  db.exec('CREATE INDEX IF NOT EXISTS idx_accounts_owner ON accounts(owner_id)');
 }
 
 export function getDb(dbPath = config.dbPath) {

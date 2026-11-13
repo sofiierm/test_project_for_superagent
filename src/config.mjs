@@ -73,7 +73,35 @@ export const config = {
   // База экспоненциальной паузы после ошибки источника, минуты.
   syncBackoffMinutes: Math.max(1, int(process.env.SYNC_BACKOFF_MINUTES, 15)),
   syncBackoffMaxMinutes: Math.max(15, int(process.env.SYNC_BACKOFF_MAX_MINUTES, 12 * 60)),
+  // ---- Доступ (#7) ----
+  // AUTH_REQUIRED=false — локальный запуск одного человека: вход не нужен, все
+  // действия принадлежат владельцу. Для общего доступа включается true, и тогда
+  // без сессии видна только страница входа.
+  authRequired: bool(process.env.AUTH_REQUIRED, false),
+  // Секрет подписи cookie сессии. В локальном режиме не нужен; в режиме с
+  // входом обязателен — иначе сессии подделываются. Проверяется при старте.
+  sessionSecret: process.env.SESSION_SECRET || '',
+  // Secure-флаг cookie: включать за HTTPS, иначе браузер не сохранит cookie
+  // на http://localhost и вход будет «молча» не работать.
+  cookieSecure: bool(process.env.COOKIE_SECURE, false),
   appName: 'Creator Analytics',
 };
+
+/**
+ * Проверка конфигурации доступа (#7).
+ *
+ * Без секрета подпись cookie — фикция: подделать сессию смог бы любой. Молча
+ * поднимать сервис в таком виде нельзя, поэтому отказываемся стартовать.
+ * В локальном режиме секрет не нужен: сессии там не используются.
+ */
+export function assertAuthConfig(cfg = config) {
+  if (!cfg.authRequired) return;
+  if (!cfg.sessionSecret || cfg.sessionSecret.length < 16) {
+    throw new Error(
+      'AUTH_REQUIRED=true требует SESSION_SECRET длиной не менее 16 символов. '
+      + 'Сгенерируйте его: node -e "console.log(require(\'node:crypto\').randomBytes(32).toString(\'base64url\'))"',
+    );
+  }
+}
 
 export default config;

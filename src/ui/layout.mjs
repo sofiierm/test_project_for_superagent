@@ -9,9 +9,15 @@ const NAV = [
   { href: '/help', label: 'Как это работает', key: 'help' },
 ];
 
+// «Доступ» показывается только владельцу в режиме с входом: наблюдателю там
+// нечего делать, а в локальном запуске пользователей нет вовсе.
+const ACCESS_NAV = { href: '/access', label: 'Доступ', key: 'access' };
+
 export function layout({
-  title, active = '', body, mode = 'demo', providerReason = '', description = '',
+  title, active = '', body, mode = 'demo', providerReason = '', description = '', chrome = true,
+  user = null, nav = [], csrf = '',
 }) {
+  const items = [...NAV, ...nav];
   return html`<!doctype html>
 <html lang="ru">
 <head>
@@ -27,29 +33,38 @@ export function layout({
 </head>
 <body>
   <div class="shell">
-    <header class="topbar">
+    ${chrome ? html`<header class="topbar">
       <div class="topbar__inner">
         <a class="brand" href="/">
           <span class="brand__mark" aria-hidden="true">CA</span>
           <span class="brand__text">Creator Analytics<small>аналитика контента</small></span>
         </a>
         <nav class="nav" aria-label="Основная навигация">
-          ${NAV.map((item) => (item.key === active
+          ${items.map((item) => (item.key === active
             ? html`<a class="nav__link" href="${item.href}" aria-current="page">${item.label}</a>`
             : html`<a class="nav__link" href="${item.href}">${item.label}</a>`))}
         </nav>
+        ${user
+          ? html`<span class="topbar__user" title="${user.email}">
+              ${user.name || user.email}
+              <form method="post" action="/logout" class="topbar__logout">
+                <input type="hidden" name="_csrf" value="${csrf}">
+                <button class="btn btn--ghost btn--small" type="submit">Выйти</button>
+              </form>
+            </span>`
+          : ''}
         ${mode === 'demo'
           ? html`<span class="mode-badge mode-badge--demo" title="${providerReason}"><span class="mode-badge__dot"></span>демо-данные</span>`
           : html`<span class="mode-badge" title="${providerReason}"><span class="mode-badge__dot" style="background:var(--good)"></span>живые данные</span>`}
       </div>
-    </header>
+    </header>` : ''}
     <main class="main" id="main">${body}</main>
-    <footer class="footer">
+    ${chrome ? html`<footer class="footer">
       <div class="footer__inner">
         <span>Creator Analytics — открытый сервис аналитики контента. Работает локально, данные не покидают ваш сервер.</span>
         <span>Данные платформ — публичная статистика на момент синхронизации.</span>
       </div>
-    </footer>
+    </footer>` : ''}
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <dialog class="modal" id="add-account-dialog" aria-labelledby="add-account-title">

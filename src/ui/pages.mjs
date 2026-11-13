@@ -1,5 +1,5 @@
 // Обзор: сводка по всем аккаунтам, динамика, выводы, темы.
-import { html } from './html.mjs';
+import { html, raw } from './html.mjs';
 import { layout } from './layout.mjs';
 import {
   columnsChart, deltaBadge, emptyState, hookTable, insightList, lineChart, multiLineChart,
@@ -12,7 +12,7 @@ import {
 
 const WEEKDAY_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-export function dashboardPage(data, { mode, providerReason }) {
+export function dashboardPage(data, { mode, providerReason, user = null, nav = [], csrf = '' }) {
   const { accounts, summary, insights, series, byPlatform, topVideos, topics, sentiment, hooks, hashtags } = data;
 
   if (!accounts.length) {
@@ -21,6 +21,9 @@ export function dashboardPage(data, { mode, providerReason }) {
       active: 'dashboard',
       mode,
       providerReason,
+      user,
+      nav,
+      csrf,
       body: html`
         <div class="page-head">
           <div class="page-head__titles">
@@ -49,6 +52,9 @@ export function dashboardPage(data, { mode, providerReason }) {
     active: 'dashboard',
     mode,
     providerReason,
+    user,
+    nav,
+    csrf,
     body: html`
       <div class="page-head">
         <div class="page-head__titles">
@@ -202,12 +208,15 @@ export function dashboardPage(data, { mode, providerReason }) {
   });
 }
 
-export function accountsPage(accounts, { mode, providerReason }) {
+export function accountsPage(accounts, { mode, providerReason, user = null, nav = [], csrf = '' }) {
   return layout({
     title: 'Аккаунты',
     active: 'accounts',
     mode,
     providerReason,
+    user,
+    nav,
+    csrf,
     body: html`
       <div class="page-head">
         <div class="page-head__titles">
@@ -256,7 +265,7 @@ export function accountsPage(accounts, { mode, providerReason }) {
   });
 }
 
-export function accountPage(data, { mode, providerReason }) {
+export function accountPage(data, { mode, providerReason, user = null, nav = [], csrf = '' }) {
   const {
     account, videos, summary, insights, series, topics, hashtags, sentiment, hooks,
     bestTimes, cadence, outliers, weakest, runs, viewsDelta,
@@ -277,6 +286,9 @@ export function accountPage(data, { mode, providerReason }) {
     active: 'accounts',
     mode,
     providerReason,
+    user,
+    nav,
+    csrf,
     body: html`
       <nav class="breadcrumbs" aria-label="Хлебные крошки" style="margin-bottom:12px">
         <a href="/accounts">Аккаунты</a><span class="breadcrumbs__sep">/</span><span>@${account.handle}</span>
@@ -421,12 +433,15 @@ export function accountPage(data, { mode, providerReason }) {
   });
 }
 
-export function videosPage(videos, { mode, providerReason, platform = null, account = null }) {
+export function videosPage(videos, { mode, providerReason, platform = null, account = null, user = null, nav = [], csrf = '' }) {
   return layout({
     title: 'Ролики',
     active: 'videos',
     mode,
     providerReason,
+    user,
+    nav,
+    csrf,
     body: html`
       <div class="page-head">
         <div class="page-head__titles">
@@ -453,13 +468,16 @@ export function videosPage(videos, { mode, providerReason, platform = null, acco
   });
 }
 
-export function videoPage(data, { mode, providerReason }) {
+export function videoPage(data, { mode, providerReason, user = null, nav = [], csrf = '' }) {
   const { video, account, percentile, rank, viewsVsMedian, erVsAccount, followerReach, siblings } = data;
   return layout({
     title: video.title,
     active: 'videos',
     mode,
     providerReason,
+    user,
+    nav,
+    csrf,
     body: html`
       <nav class="breadcrumbs" aria-label="Хлебные крошки" style="margin-bottom:12px">
         <a href="/videos">Ролики</a><span class="breadcrumbs__sep">/</span>
@@ -570,12 +588,15 @@ export function videoPage(data, { mode, providerReason }) {
   });
 }
 
-export function helpPage({ mode, providerReason, provider, overview }) {
+export function helpPage({ mode, providerReason, provider, overview, user = null, nav = [], csrf = '' }) {
   return layout({
     title: 'Как это работает',
     active: 'help',
     mode,
     providerReason,
+    user,
+    nav,
+    csrf,
     body: html`
       <div class="page-head">
         <div class="page-head__titles">
@@ -649,11 +670,14 @@ export function helpPage({ mode, providerReason, provider, overview }) {
   });
 }
 
-export function notFoundPage({ mode, providerReason }) {
+export function notFoundPage({ mode, providerReason, user = null, nav = [], csrf = '' }) {
   return layout({
     title: 'Страница не найдена',
     mode,
     providerReason,
+    user,
+    nav,
+    csrf,
     body: html`
       <div class="card">${emptyState({
         title: 'Страница не найдена',
@@ -672,7 +696,7 @@ export { weekdayIndex };
  * страница работает без JavaScript. Строка «кто быстрее растёт» стоит выше
  * таблицы, потому что это и есть ответ на вопрос пользователя.
  */
-export function comparePage(data, { mode, providerReason }) {
+export function comparePage(data, { mode, providerReason, user = null, nav = [], csrf = '' }) {
   const { accounts, selected, period, comparison, growth, series, keys, bucket, error } = data;
   const selectedIds = new Set(selected.map((a) => a.id));
 
@@ -705,6 +729,9 @@ export function comparePage(data, { mode, providerReason }) {
     active: 'compare',
     mode,
     providerReason,
+    user,
+    nav,
+    csrf,
     body: html`
       <div class="page-head">
         <div class="page-head__titles">
@@ -843,5 +870,162 @@ export function comparePage(data, { mode, providerReason }) {
           </div>`
       }
     `,
+  });
+}
+
+/**
+ * Страница входа (#7).
+ *
+ * Отдельный, минимальный каркас без навигации: пока пользователь не вошёл,
+ * показывать меню нечего, а ссылки на разделы вели бы обратно на эту же
+ * страницу. Форма отправляется обычным POST, поэтому вход работает без JS.
+ */
+export function loginPage({ error = '', email = '', needsSetup = false, mode, providerReason, csrf = '' }) {
+  return layout({
+    title: needsSetup ? 'Настройка доступа' : 'Вход',
+    active: '',
+    mode,
+    providerReason,
+    chrome: false,
+    body: html`
+      <div class="auth">
+        <div class="card auth__card">
+          <h1 class="auth__title">${needsSetup ? 'Настройте доступ' : 'Вход в сервис'}</h1>
+          <p class="card__hint">
+            ${needsSetup
+              ? 'Создайте владельца сервиса: этот аккаунт получит полный доступ. Пароль хранится только как хеш.'
+              : 'Сервис открыт по сети, поэтому данные доступны после входа.'}
+          </p>
+          ${error ? notice(error, 'error') : ''}
+          <form class="auth__form" method="post" action="${needsSetup ? '/setup' : '/login'}">
+            <input type="hidden" name="_csrf" value="${csrf}">
+            <div class="field">
+              <label class="field__label" for="auth-email">Email</label>
+              <input class="input" id="auth-email" name="email" type="email" required autocomplete="username"
+                     value="${email}" autofocus>
+            </div>
+            ${needsSetup
+              ? html`<div class="field">
+                  <label class="field__label" for="auth-name">Имя <span class="field__hint">(необязательно)</span></label>
+                  <input class="input" id="auth-name" name="name" type="text" autocomplete="name">
+                </div>`
+              : ''}
+            <div class="field">
+              <label class="field__label" for="auth-password">Пароль</label>
+              <input class="input" id="auth-password" name="password" type="password" required
+                     autocomplete="${needsSetup ? 'new-password' : 'current-password'}"
+                     ${needsSetup ? raw('minlength="8"') : ''}>
+              ${needsSetup ? html`<span class="field__hint">Не короче 8 символов.</span>` : ''}
+            </div>
+            <button class="btn btn--primary" type="submit">${needsSetup ? 'Создать владельца' : 'Войти'}</button>
+          </form>
+        </div>
+      </div>`,
+  });
+}
+
+/**
+ * Управление доступом (#7).
+ *
+ * Видна только владельцу. Наблюдателю здесь нечего делать: он не может ни
+ * создавать пользователей, ни менять роли — показывать ему форму, которая
+ * всё равно ответит 403, значит обманывать.
+ */
+export function accessPage({ users, currentUser, created = '', error = '' }, { mode, providerReason, user = null, nav = [], csrf = '' }) {
+  return layout({
+    title: 'Доступ',
+    active: 'access',
+    mode,
+    providerReason,
+    user,
+    nav,
+    csrf,
+    body: html`
+      <div class="page-head">
+        <div>
+          <h1>Доступ</h1>
+          <p class="page-head__sub">Кто может открывать сервис и что ему разрешено.</p>
+        </div>
+      </div>
+
+      ${created ? notice(`Пользователь ${created} создан.`, 'ok') : ''}
+      ${error ? notice(error, 'error') : ''}
+
+      <div class="card">
+        <h2>Пользователи</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Email</th><th>Имя</th><th>Роль</th><th>Последний вход</th><th></th></tr></thead>
+            <tbody>
+              ${users.map((user) => html`
+                <tr>
+                  <td>${user.email}${user.id === currentUser.id ? html` <span class="badge">это вы</span>` : ''}</td>
+                  <td>${user.name || '—'}</td>
+                  <td>${user.role === 'owner' ? 'Владелец' : 'Наблюдатель'}</td>
+                  <td>${user.lastLoginAt ? formatDateTime(user.lastLoginAt) : 'ещё не входил'}</td>
+                  <td class="table__actions">
+                    ${user.id === currentUser.id
+                      ? ''
+                      : html`<form method="post" action="/access/${user.id}/delete">
+                          <input type="hidden" name="_csrf" value="${csrf}">
+                          <button class="btn btn--ghost btn--danger" type="submit">Удалить</button>
+                        </form>`}
+                  </td>
+                </tr>`)}
+            </tbody>
+          </table>
+        </div>
+        <p class="card__hint">
+          Наблюдатель видит только свои аккаунты и ничего не может изменить.
+          Удаление пользователя уносит и его аккаунты: они принадлежат ему.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>Добавить пользователя</h2>
+        <form class="form" method="post" action="/access">
+          <input type="hidden" name="_csrf" value="${csrf}">
+          <div class="field">
+            <label class="field__label" for="new-email">Email</label>
+            <input class="input" id="new-email" name="email" type="email" required autocomplete="off">
+          </div>
+          <div class="field">
+            <label class="field__label" for="new-name">Имя <span class="field__hint">(необязательно)</span></label>
+            <input class="input" id="new-name" name="name" type="text" autocomplete="off">
+          </div>
+          <div class="field">
+            <label class="field__label" for="new-role">Роль</label>
+            <select class="input" id="new-role" name="role">
+              <option value="viewer">Наблюдатель — только чтение</option>
+              <option value="owner">Владелец — полный доступ</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="new-password">Пароль</label>
+            <input class="input" id="new-password" name="password" type="password" required minlength="8"
+                   autocomplete="new-password">
+            <span class="field__hint">Не короче 8 символов. Передайте пароль пользователю сами.</span>
+          </div>
+          <button class="btn btn--primary" type="submit">Создать пользователя</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Свой пароль</h2>
+        <form class="form" method="post" action="/access/password">
+          <input type="hidden" name="_csrf" value="${csrf}">
+          <div class="field">
+            <label class="field__label" for="cur-password">Текущий пароль</label>
+            <input class="input" id="cur-password" name="currentPassword" type="password" required
+                   autocomplete="current-password">
+          </div>
+          <div class="field">
+            <label class="field__label" for="new-password-self">Новый пароль</label>
+            <input class="input" id="new-password-self" name="newPassword" type="password" required minlength="8"
+                   autocomplete="new-password">
+          </div>
+          <button class="btn" type="submit">Сменить пароль</button>
+        </form>
+      </div>`,
   });
 }
