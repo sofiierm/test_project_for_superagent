@@ -61,7 +61,7 @@ const VIEWPORTS = [
 
 // `/compare?accounts=1,2` — страница сравнения с реальным выбором: пустое
 // состояние проверяет только его само, а таблицу и легенду надо увидеть.
-const PATHS = ['/', '/accounts', '/compare?accounts=1,2', '/videos', '/help'];
+const PATHS = ['/', '/accounts', '/compare?accounts=1,2', '/videos', '/help', '/feedback', '/access/feedback'];
 
 function luminance([r, g, b]) {
   const channel = (c) => {
@@ -121,6 +121,7 @@ for (const viewport of VIEWPORTS) {
         const r = el.getBoundingClientRect();
         if (!r.width || !r.height) return false;
         if (el.closest('table')) return false; // строки таблицы — не отдельные цели
+        if (el.closest('.hp')) return false; // скрытая ловушка для ботов не цель нажатия
         return r.height < 24 || r.width < 24;
       }).map((el) => `${el.tagName}.${el.className}:${Math.round(el.getBoundingClientRect().width)}x${Math.round(el.getBoundingClientRect().height)}`);
       const unlabeled = [...document.querySelectorAll('input, select, textarea')].filter((el) => {

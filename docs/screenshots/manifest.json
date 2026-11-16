@@ -205,6 +205,63 @@
     "scrollHeight": 2152
   },
   {
+    "file": "docs/screenshots/after-feedback-desktop.png",
+    "bytes": 152905,
+    "title": "Обратная связь — Creator Analytics",
+    "h1": "Обратная связь",
+    "h2": [
+      "Добавить аккаунт"
+    ],
+    "tableRows": 0,
+    "chartCount": 0,
+    "statValues": [],
+    "insightTitles": [],
+    "hasNaN": false,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "scrollHeight": 900
+  },
+  {
+    "file": "docs/screenshots/after-feedback-mobile.png",
+    "bytes": 85726,
+    "title": "Обратная связь — Creator Analytics",
+    "h1": "Обратная связь",
+    "h2": [
+      "Добавить аккаунт"
+    ],
+    "tableRows": 0,
+    "chartCount": 0,
+    "statValues": [],
+    "insightTitles": [],
+    "hasNaN": false,
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "scrollHeight": 854
+  },
+  {
+    "file": "docs/screenshots/after-feedback-inbox.png",
+    "bytes": 133430,
+    "title": "Обращения — Creator Analytics",
+    "h1": "Обращения",
+    "h2": [
+      "Добавить аккаунт"
+    ],
+    "tableRows": 1,
+    "chartCount": 0,
+    "statValues": [],
+    "insightTitles": [],
+    "hasNaN": false,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "scrollHeight": 900
+  },
+  {
     "file": "docs/screenshots/after-dashboard-empty.png",
     "bytes": 145744,
     "title": "Обзор — Creator Analytics",

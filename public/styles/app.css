@@ -705,3 +705,78 @@ dialog.modal::backdrop { background: rgba(5, 7, 11, 0.72); backdrop-filter: blur
   color: var(--text-dim);
   font-size: 0.8rem;
 }
+
+/* ---- Обратная связь ---- */
+
+.field__error {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--bad);
+}
+
+.auth__links {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 0.84rem;
+  color: var(--text-dim);
+}
+
+.notice--ok {
+  border-color: rgba(79, 209, 165, 0.32);
+  background: var(--good-soft);
+  color: #a8ecd8;
+}
+
+/* Скрытое поле-ловушка для ботов: человек его не видит и не может заполнить,
+   а автозаполняемый бот часто заполняет. */
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.feedback {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: 24px 0 48px;
+}
+
+.feedback__brand {
+  justify-self: start;
+  width: 100%;
+  max-width: 640px;
+}
+
+.feedback__card {
+  width: 100%;
+  max-width: 640px;
+}
+
+.feedback__back {
+  width: 100%;
+  max-width: 640px;
+  font-size: 0.86rem;
+  color: var(--text-dim);
+}
+
+.feedback__owner {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.feedback__message {
+  min-width: 220px;
+  max-width: 460px;
+}
+
+@media (max-width: 560px) {
+  .feedback { padding: 8px 0 32px; }
+  .feedback__brand { max-width: none; }
+  .feedback__message { min-width: 160px; }
+}
