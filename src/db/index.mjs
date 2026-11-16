@@ -112,6 +112,21 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id, expires_at DESC);
 
+-- Обращения с публичной формы «Обратная связь».
+--
+-- Это данные посетителей, а не аккаунтов сервиса: они не привязаны к
+-- пользователю и видны только владельцу. Ни IP, ни User-Agent не храним —
+-- для ответа они не нужны, а лишние персональные данные собирать незачем.
+CREATE TABLE IF NOT EXISTS feedback (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  name        TEXT NOT NULL,
+  phone       TEXT NOT NULL,
+  comment     TEXT NOT NULL DEFAULT '',
+  created_at  TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC);
+
 -- Токены официальных API (#8). Хранятся зашифрованными (AES-256-GCM): утечка
 -- базы не должна отдавать доступ к чужим аккаунтам платформ.
 CREATE TABLE IF NOT EXISTS platform_tokens (

@@ -21,6 +21,7 @@ process.env.SESSION_SECRET = 'test-secret-at-least-16-chars-long';
 const { createServer } = await import('../../src/server.mjs');
 const { closeDb, getDb } = await import('../../src/db/index.mjs');
 const { insertAccount, listAccounts } = await import('../../src/db/accounts.mjs');
+const { listFeedback } = await import('../../src/db/feedback.mjs');
 const { hashPassword } = await import('../../src/lib/auth.mjs');
 const { insertUser } = await import('../../src/db/users.mjs');
 
@@ -84,6 +85,14 @@ test('API и страницы закрыты без сессии', async () => {
   }
 });
 
+test('публичная форма обратной связи открыта до входа', async () => {
+  const response = await request('/feedback');
+  assert.equal(response.status, 200, 'гость не может открыть форму');
+  const html = await response.text();
+  assert.match(html, /Обратная связь/);
+  assert.match(html, /name="phone"/);
+});
+
 test('настройка владельца сразу входит в сервис', async () => {
   const { token, cookie: preCookie } = await csrfFromForm('/setup');
   assert.ok(token, 'на форме настройки нет CSRF-токена');
@@ -104,6 +113,43 @@ test('настройка владельца сразу входит в серв�
   const dashboard = await request('/', { headers: { cookie } });
   assert.equal(dashboard.status, 200);
   assert.match(await dashboard.text(), /Обзор/);
+});
+
+test('гость отправляет обращение, а владелец видит его в списке', async () => {
+  const { token, cookie } = await csrfFromForm('/feedback');
+  assert.ok(token, 'на публичной форме нет CSRF-токена');
+
+  const response = await request('/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', cookie },
+    body: new URLSearchParams({
+      name: 'Гость', phone: '+7 999 123-45-67', comment: 'Нужна помощь', _csrf: token,
+    }),
+  });
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get('location'), '/feedback?sent=1');
+
+  const saved = listFeedback();
+  assert.equal(saved.length, 1, 'обращение гостя не сохранилось');
+  assert.equal(saved[0].name, 'Гость');
+
+  const owner = await signIn('owner@example.com', 'password123');
+  const inbox = await request('/access/feedback', { headers: { cookie: owner.cookie } });
+  assert.equal(inbox.status, 200);
+  const html = await inbox.text();
+  assert.match(html, /Гость/);
+  assert.match(html, /\+7 \(999\) 123-45-67/);
+});
+
+test('публичная форма без CSRF-токена отклоняется', async () => {
+  const before = listFeedback().length;
+  const response = await request('/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ name: 'Атака', phone: '+79991234567', comment: '' }),
+  });
+  assert.equal(response.status, 403);
+  assert.equal(listFeedback().length, before, 'запрос без токена сохранил обращение');
 });
 
 test('второй раз настроить владельца нельзя', async () => {
@@ -271,4 +317,10 @@ test('наблюдатель не может открыть управление
   const { cookie } = await signIn('viewer@example.com', 'password123');
   const response = await request('/access', { headers: { cookie } });
   assert.equal(response.status, 403);
+});
+
+test('наблюдатель не видит обращения с формы', async () => {
+  const { cookie } = await signIn('viewer@example.com', 'password123');
+  const response = await request('/access/feedback', { headers: { cookie } });
+  assert.equal(response.status, 403, 'наблюдатель увидел личные данные посетителей');
 });

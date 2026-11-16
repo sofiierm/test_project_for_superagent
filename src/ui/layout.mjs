@@ -7,6 +7,7 @@ const NAV = [
   { href: '/compare', label: 'Сравнение', key: 'compare' },
   { href: '/videos', label: 'Ролики', key: 'videos' },
   { href: '/help', label: 'Как это работает', key: 'help' },
+  { href: '/feedback', label: 'Обратная связь', key: 'feedback' },
 ];
 
 // «Доступ» показывается только владельцу в режиме с входом: наблюдателю там
@@ -62,7 +63,7 @@ export function layout({
     ${chrome ? html`<footer class="footer">
       <div class="footer__inner">
         <span>Creator Analytics — открытый сервис аналитики контента. Работает локально, данные не покидают ваш сервер.</span>
-        <span>Данные платформ — публичная статистика на момент синхронизации.</span>
+        <span>Данные платформ — публичная статистика на момент синхронизации. <a href="/feedback">Обратная связь</a></span>
       </div>
     </footer>` : ''}
   </div>

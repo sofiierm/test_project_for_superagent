@@ -10,6 +10,7 @@ import {
 import {
   formatDateTime, formatIn, formatNumber, formatPercent, formatShortDate, plural, weekdayIndex,
 } from '../lib/dates.mjs';
+import { COMMENT_MAX, NAME_MAX } from '../services/feedback.mjs';
 
 const WEEKDAY_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
@@ -897,6 +898,167 @@ export function comparePage(data, { mode, providerReason, user = null, nav = [],
 }
 
 /**
+ * Публичная форма обратной связи.
+ *
+ * Отдельный минимальный каркас, как у входа: страница доступна без сессии,
+ * поэтому показывать в шапке меню аналитики бессмысленно — все ссылки вели бы
+ * на форму входа. Сама форма отправляется обычным POST и работает без JS.
+ */
+export function feedbackPage({
+  mode, providerReason, csrf = '', values = {}, errors = {}, sent = false, error = '',
+  isOwner = false, feedbackCount = 0,
+}) {
+  const value = (key) => values[key] ?? '';
+  const fieldError = (key, id) => (errors[key]
+    ? html`<p class="field__error" id="${id}">${errors[key]}</p>`
+    : '');
+  const invalid = (key) => (errors[key] ? 'true' : 'false');
+
+  return layout({
+    title: 'Обратная связь',
+    active: '',
+    mode,
+    providerReason,
+    chrome: false,
+    body: html`
+      <div class="feedback">
+        <a class="brand feedback__brand" href="/">
+          <span class="brand__mark" aria-hidden="true">CA</span>
+          <span class="brand__text">Creator Analytics<small>аналитика контента</small></span>
+        </a>
+
+        <div class="card feedback__card">
+          <h1 class="auth__title">Обратная связь</h1>
+          <p class="card__hint">
+            Напишите, что не работает или чего не хватает. Оставьте телефон — ответим лично.
+          </p>
+
+          ${sent ? html`<div role="status">${notice('Спасибо! Обращение отправлено. Свяжемся по указанному телефону.', 'ok')}</div>` : ''}
+          ${error ? html`<div role="alert">${notice(error, 'error')}</div>` : ''}
+
+          <form class="auth__form" method="post" action="/feedback">
+            <input type="hidden" name="_csrf" value="${csrf}">
+
+            <div class="field">
+              <label class="field__label" for="feedback-name">Имя</label>
+              <input class="input" id="feedback-name" name="name" type="text" required
+                     minlength="2" maxlength="${NAME_MAX}" autocomplete="name" autofocus
+                     placeholder="Как к вам обращаться" value="${value('name')}"
+                     aria-invalid="${invalid('name')}"
+                     aria-describedby="${errors.name ? 'feedback-name-error' : 'feedback-name-hint'}">
+              ${errors.name ? fieldError('name', 'feedback-name-error')
+                : html`<span class="field__hint" id="feedback-name-hint">Не короче 2 символов.</span>`}
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="feedback-phone">Телефон</label>
+              <input class="input" id="feedback-phone" name="phone" type="tel" required
+                     inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__"
+                     value="${value('phone')}" aria-invalid="${invalid('phone')}"
+                     aria-describedby="${errors.phone ? 'feedback-phone-error feedback-phone-hint' : 'feedback-phone-hint'}">
+              ${fieldError('phone', 'feedback-phone-error')}
+              <span class="field__hint" id="feedback-phone-hint">Российский номер: +7, 8 или 10 цифр.</span>
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="feedback-comment">Комментарий
+                <span class="field__hint">(необязательно)</span>
+              </label>
+              <textarea class="textarea" id="feedback-comment" name="comment" rows="4"
+                        maxlength="${COMMENT_MAX}" placeholder="Например: не открывается отчёт за сентябрь"
+                        aria-invalid="${invalid('comment')}"
+                        aria-describedby="${errors.comment ? 'feedback-comment-error feedback-comment-hint' : 'feedback-comment-hint'}">${value('comment')}</textarea>
+              ${fieldError('comment', 'feedback-comment-error')}
+              <span class="field__hint" id="feedback-comment-hint">До ${COMMENT_MAX} символов.</span>
+            </div>
+
+            <div class="hp" aria-hidden="true">
+              <label for="feedback-website">Не заполняйте это поле</label>
+              <input type="text" id="feedback-website" name="website" tabindex="-1" autocomplete="off">
+            </div>
+
+            <button class="btn btn--primary" type="submit">Отправить</button>
+          </form>
+
+          <p class="card__hint">
+            Телефон и имя нужны только для ответа на обращение.
+          </p>
+
+          ${isOwner
+            ? html`<p class="feedback__owner">
+                Обращения с формы${feedbackCount ? ` (${feedbackCount})` : ''}:
+                <a href="/access/feedback">открыть список</a>
+              </p>`
+            : ''}
+        </div>
+
+        <p class="feedback__back"><a href="/">← Вернуться на сайт</a></p>
+      </div>`,
+  });
+}
+
+/**
+ * Список обращений для владельца.
+ *
+ * Показываем только владельцу: это личные данные посетителей, а не часть
+ * аналитики аккаунтов. Наблюдателю достаточно знать, что раздела нет.
+ */
+export function feedbackInboxPage({ items = [], total = items.length, removed = false, error = '' }, { mode, providerReason, user = null, nav = [], csrf = '' }) {
+  return layout({
+    title: 'Обращения',
+    active: 'feedback',
+    mode,
+    providerReason,
+    user,
+    nav,
+    csrf,
+    body: html`
+      <div class="page-head">
+        <div class="page-head__titles">
+          <h1>Обращения</h1>
+          <p class="page-head__lead">Сообщения с публичной формы обратной связи.</p>
+        </div>
+        <div class="page-head__actions">
+          <a class="btn" href="/feedback">Открыть форму</a>
+        </div>
+      </div>
+
+      ${removed ? notice('Обращение удалено.', 'ok') : ''}
+      ${error ? notice(error, 'error') : ''}
+
+      ${items.length
+        ? html`<div class="card">
+            <div class="table-wrap">
+              <table class="table data" aria-label="Обращения с формы обратной связи">
+                <thead><tr><th scope="col">Получено</th><th scope="col">Имя</th><th scope="col">Телефон</th><th scope="col">Комментарий</th><th scope="col"><span class="sr-only">Действия</span></th></tr></thead>
+                <tbody>
+                  ${items.map((item) => html`
+                    <tr>
+                      <td class="num">${formatDateTime(item.createdAt)}</td>
+                      <td>${item.name}</td>
+                      <td><a href="tel:${item.phone}">${item.phoneFormatted}</a></td>
+                      <td class="feedback__message"><div class="prose">${item.comment || '—'}</div></td>
+                      <td class="table__actions">
+                        <form method="post" action="/access/feedback/${item.id}/delete">
+                          <input type="hidden" name="_csrf" value="${csrf}">
+                          <button class="btn btn--ghost btn--danger" type="submit">Удалить</button>
+                        </form>
+                      </td>
+                    </tr>`)}
+                </tbody>
+              </table>
+            </div>
+            <p class="card__hint">Всего обращений: ${total}${total > items.length ? `, показаны последние ${items.length}` : ''}. Старые сообщения удаляйте после ответа.</p>
+          </div>`
+        : html`<div class="card">${emptyState({
+            title: 'Обращений пока нет',
+            text: 'Когда кто-то оставит сообщение через форму, оно появится здесь.',
+            action: html`<a class="btn btn--primary" href="/feedback">Открыть форму</a>`,
+          })}</div>`}`,
+  });
+}
+
+/**
  * Страница входа (#7).
  *
  * Отдельный, минимальный каркас без навигации: пока пользователь не вошёл,
@@ -942,6 +1104,9 @@ export function loginPage({ error = '', email = '', needsSetup = false, mode, pr
             </div>
             <button class="btn btn--primary" type="submit">${needsSetup ? 'Создать владельца' : 'Войти'}</button>
           </form>
+          <p class="auth__links">
+            Есть вопрос или предложение? <a href="/feedback">Напишите нам</a>.
+          </p>
         </div>
       </div>`,
   });
@@ -954,7 +1119,7 @@ export function loginPage({ error = '', email = '', needsSetup = false, mode, pr
  * создавать пользователей, ни менять роли — показывать ему форму, которая
  * всё равно ответит 403, значит обманывать.
  */
-export function accessPage({ users, currentUser, created = '', error = '' }, { mode, providerReason, user = null, nav = [], csrf = '' }) {
+export function accessPage({ users, currentUser, created = '', error = '', feedbackCount = 0 }, { mode, providerReason, user = null, nav = [], csrf = '' }) {
   return layout({
     title: 'Доступ',
     active: 'access',
@@ -973,6 +1138,18 @@ export function accessPage({ users, currentUser, created = '', error = '' }, { m
 
       ${created ? notice(`Пользователь ${created} создан.`, 'ok') : ''}
       ${error ? notice(error, 'error') : ''}
+
+      <div class="card">
+        <div class="card__head">
+          <h2 class="card__title">Обращения с сайта</h2>
+          <a class="btn btn--small" href="/access/feedback">Открыть</a>
+        </div>
+        <p class="card__hint">
+          ${feedbackCount
+            ? `Сообщений с формы: ${feedbackCount}.`
+            : 'Пока никто не оставлял сообщений через форму «Обратная связь».'}
+        </p>
+      </div>
 
       <div class="card">
         <h2>Пользователи</h2>

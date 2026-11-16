@@ -28,6 +28,9 @@ const SHOTS = [
   { name: 'after-videos-desktop', path: '/videos', viewport: 'desktop', fullPage: true },
   { name: 'after-video-desktop', path: '/videos/1', viewport: 'desktop', fullPage: true },
   { name: 'after-help-desktop', path: '/help', viewport: 'desktop', fullPage: true },
+  { name: 'after-feedback-desktop', path: '/feedback', viewport: 'desktop', fullPage: false },
+  { name: 'after-feedback-mobile', path: '/feedback', viewport: 'mobile', fullPage: true },
+  { name: 'after-feedback-inbox', path: '/access/feedback', viewport: 'desktop', fullPage: true },
   { name: 'after-dashboard-empty', path: '/', viewport: 'desktop', fullPage: false, empty: true },
 ];
 
@@ -67,6 +70,19 @@ const server = await startServer(dataDir, PORT);
 const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ca-empty-'));
 const EMPTY_PORT = PORT + 1;
 const emptyServer = await startServer(emptyDir, EMPTY_PORT, { seed: false });
+
+// Одно обращение, чтобы список обращений был не пустым: кадр пустого
+// состояния не показывает, что именно видит владелец.
+const seeded = await fetch(`${BASE}/feedback`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    name: 'Анна Смирнова',
+    phone: '8 (999) 123-45-67',
+    comment: 'Не открывается отчёт за сентябрь — проверьте, пожалуйста.',
+  }),
+});
+if (!seeded.ok) throw new Error(`не удалось добавить обращение для кадров: ${seeded.status}`);
 
 const browser = await chromium.launch();
 const written = [];

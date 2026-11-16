@@ -169,7 +169,7 @@ async function main() {
 
   await scenario('мобильный экран без горизонтальной прокрутки', async () => {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-    for (const route of ['/', '/accounts', '/videos', '/help']) {
+    for (const route of ['/', '/accounts', '/videos', '/help', '/feedback', '/access/feedback']) {
       await page.goto(BASE + route, { waitUntil: 'networkidle' });
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       assert.ok(overflow <= 0, `${route}: прокрутка ${overflow}px`);
@@ -185,6 +185,26 @@ async function main() {
     assert.ok(await page.locator('svg.chart').count() >= 1);
     const rows = await page.locator('table.data tbody tr').count();
     assert.ok(rows > 0, 'таблица роликов пуста без JS');
+    await context.close();
+  });
+
+  await scenario('форма обратной связи отправляется без JavaScript', async () => {
+    const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${BASE}/feedback`, { waitUntil: 'domcontentloaded' });
+    assert.equal(await page.locator('h1').innerText(), 'Обратная связь');
+    await page.fill('#feedback-name', 'Без JavaScript');
+    await page.fill('#feedback-phone', '8 (999) 123-45-67');
+    await page.fill('#feedback-comment', 'Проверка формы');
+    await page.click('button[type="submit"]');
+    await page.waitForLoadState('domcontentloaded');
+    assert.match(page.url(), /\/feedback\?sent=1$/);
+    assert.match(await page.locator('body').innerText(), /Спасибо! Обращение отправлено/);
+
+    // Владелец видит отправленное обращение в списке.
+    await page.goto(`${BASE}/access/feedback`, { waitUntil: 'domcontentloaded' });
+    assert.match(await page.locator('body').innerText(), /Без JavaScript/);
+    assert.match(await page.locator('body').innerText(), /\+7 \(999\) 123-45-67/);
     await context.close();
   });
 

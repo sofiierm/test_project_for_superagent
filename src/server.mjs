@@ -25,14 +25,15 @@ import { config as appConfig } from './config.mjs';
 import { isSyncInFlight } from './lib/sync-lock.mjs';
 import { startScheduler } from './services/scheduler.mjs';
 import { needsSeed, seedDemoData } from './services/seed.mjs';
+import { countFeedback, deleteFeedback, listFeedback, submitFeedback } from './services/feedback.mjs';
 import {
   accountData, comparisonData, dashboardData, overviewStats, parseAccountIds, prepareVideos,
   videoData, videosToCsv,
 } from './services/analytics.mjs';
 import { htmlToString } from './ui/html.mjs';
 import {
-  accessPage, accountPage, accountsPage, comparePage, dashboardPage, helpPage, loginPage,
-  notFoundPage, videoPage, videosPage,
+  accessPage, accountPage, accountsPage, comparePage, dashboardPage, feedbackInboxPage,
+  feedbackPage, helpPage, loginPage, notFoundPage, videoPage, videosPage,
 } from './ui/pages.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -160,6 +161,11 @@ function redirect(res, location, cookies = []) {
 
 function notFound(res, mode) {
   return sendHtml(res, 404, notFoundPage({ mode, providerReason: '' }));
+}
+
+/** IP клиента без IPv6-префикса — ключ ограничения частоты обращений. */
+function clientIp(req) {
+  return (req.socket?.remoteAddress ?? '').replace(/^::ffff:/, '');
 }
 
 /**
@@ -291,6 +297,60 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
         return redirect(res, authRequired() ? '/login' : '/', result.cookies);
       }
 
+      // ---- Обратная связь ----
+      // Форма публичная: если сервис закрыт входом, посетитель всё равно
+      // должен иметь возможность написать, не заводя учётную запись.
+      if (route === '/feedback') {
+        const feedbackContext = () => ({
+          mode,
+          providerReason,
+          isOwner: can(session.user, 'user:manage'),
+          feedbackCount: can(session.user, 'user:manage') ? countFeedback() : 0,
+        });
+
+        if (req.method === 'GET' || req.method === 'HEAD') {
+          const csrf = issueCsrf(req);
+          return sendHtml(res, 200, feedbackPage({
+            ...feedbackContext(),
+            csrf: csrf.token,
+            sent: url.searchParams.get('sent') === '1',
+          }), csrf.cookie ? { 'Set-Cookie': csrf.cookie } : {});
+        }
+        if (req.method === 'POST') {
+          const body = await readFormBody(req);
+          // Когда сервис закрыт входом, токен проверяем и для гостя: форма —
+          // точка входа для любого, а не только для уже вошедшего пользователя.
+          if (!verifyCsrf(req, body._csrf ?? '')) {
+            const csrf = issueCsrf(req);
+            return sendHtml(res, 403, feedbackPage({
+              ...feedbackContext(),
+              csrf: csrf.token,
+              values: body,
+              error: 'Форма устарела: обновите страницу и попробуйте снова.',
+            }), csrf.cookie ? { 'Set-Cookie': csrf.cookie } : {});
+          }
+
+          const result = submitFeedback({
+            name: body.name,
+            phone: body.phone,
+            comment: body.comment,
+            website: body.website,
+          }, { ip: clientIp(req) });
+
+          if (result.ok) return redirect(res, '/feedback?sent=1');
+
+          const csrf = issueCsrf(req);
+          return sendHtml(res, result.status, feedbackPage({
+            ...feedbackContext(),
+            csrf: csrf.token,
+            values: result.values ?? body,
+            errors: result.errors ?? {},
+            error: result.error ?? '',
+          }), csrf.cookie ? { 'Set-Cookie': csrf.cookie } : {});
+        }
+        return sendJson(res, 405, { error: 'method_not_allowed' });
+      }
+
       // Без входа показываем только форму: иначе любой, кто дотянулся до
       // порта, видит все аккаунты (#7).
       if (authRequired() && !session.user) {
@@ -326,7 +386,10 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
       // Общий контекст шапки: кто вошёл и какие пункты меню ему доступны.
       // Наблюдателю «Доступ» не показываем — он всё равно получит 403.
       const nav = authRequired() && can(session.user, 'user:manage')
-        ? [{ href: '/access', label: 'Доступ', key: 'access' }]
+        ? [
+          { href: '/access', label: 'Доступ', key: 'access' },
+          { href: '/access/feedback', label: 'Обращения', key: 'feedback' },
+        ]
         : [];
       const view = {
         mode,
@@ -358,6 +421,7 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
             currentUser: session.user,
             created: url.searchParams.get('created') ?? '',
             error: url.searchParams.get('error') ?? '',
+            feedbackCount: countFeedback(),
           }, view));
         }
         if (route === '/access' && req.method === 'POST') {
@@ -366,6 +430,7 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
           if (result.status !== 201) {
             return sendHtml(res, result.status, accessPage({
               users: listUsers(), currentUser: session.user, error: result.error,
+              feedbackCount: countFeedback(),
             }, view));
           }
           return redirect(res, `/access?created=${encodeURIComponent(result.user.email)}`);
@@ -378,6 +443,7 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
           if (result.status !== 200) {
             return sendHtml(res, result.status, accessPage({
               users: listUsers(), currentUser: session.user, error: result.error,
+              feedbackCount: countFeedback(),
             }, view));
           }
           return redirect(res, '/access');
@@ -391,6 +457,21 @@ export function createServer({ mode = 'demo', providerReason = '' } = {}) {
           }
           removeUser(targetId);
           return redirect(res, '/access');
+        }
+        if (route === '/access/feedback' && req.method === 'GET') {
+          return sendHtml(res, 200, feedbackInboxPage({
+            items: listFeedback({ limit: 200 }),
+            total: countFeedback(),
+            removed: url.searchParams.get('deleted') === '1',
+            error: url.searchParams.get('error') ?? '',
+          }, view));
+        }
+        const feedbackDelete = route.match(/^\/access\/feedback\/(\d+)\/delete$/);
+        if (feedbackDelete && req.method === 'POST') {
+          if (!deleteFeedback(Number(feedbackDelete[1]))) {
+            return redirect(res, `/access/feedback?error=${encodeURIComponent('Обращение не найдено.')}`);
+          }
+          return redirect(res, '/access/feedback?deleted=1');
         }
         return notFound(res, mode);
       }
